@@ -1,7 +1,8 @@
-import { isObservable } from "rxjs";
+import { isObservable, Observable } from "rxjs";
 import type { Child, VNode, Tag } from "./types.ts";
 
 export const Fragment = Symbol("Fragment");
+export const Show = Symbol("Show");
 
 export function h(
   tag: Tag,
@@ -48,6 +49,31 @@ export function render(
     for (const child of vnode.props.children ?? []) {
       render(child, container);
     }
+    return;
+  }
+
+  if (vnode.tag === Show) {
+    if (!isObservable(vnode.props.when)) return;
+    const startAnchor = document.createComment("<!-- show-start -->");
+    const endAnchor = document.createComment("<!-- show-end -->");
+    container.appendChild(startAnchor);
+    container.appendChild(endAnchor);
+
+    vnode.props.when.subscribe((next) => {
+      if (next) {
+        const fragment = document.createDocumentFragment();
+        render(vnode.props.children, fragment);
+
+        container.insertBefore(fragment, endAnchor);
+      } else {
+        while (
+          startAnchor.nextSibling &&
+          startAnchor.nextSibling !== endAnchor
+        ) {
+          container.removeChild(startAnchor.nextSibling);
+        }
+      }
+    });
     return;
   }
 

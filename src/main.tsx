@@ -1,5 +1,4 @@
-import { render } from "../lib/index.ts"
-import { App } from "./App.tsx"
+import { render } from "../lib/index.ts";
+import { App } from "./app.tsx";
 
-render(<App />, document.getElementById("root")!)
-
+render(<App />, document.getElementById("root")!);
