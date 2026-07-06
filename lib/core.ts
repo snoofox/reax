@@ -1,8 +1,12 @@
 import { isObservable, Observable } from "rxjs";
-import type { Child, VNode, Tag } from "./types.ts";
+import type { Child, VNode, Tag, Props } from "./types.ts";
 
 export const Fragment = Symbol("Fragment");
-export const Show = Symbol("Show");
+
+const ShowTag = Symbol("Show");
+export function Show(props: Props & { when: Observable<boolean> }): VNode {
+  return { tag: ShowTag, props };
+}
 
 export function h(
   tag: Tag,
@@ -13,9 +17,7 @@ export function h(
     tag,
     props: {
       ...props,
-      children: (children as any[])
-        .flat(Infinity)
-        .filter((c) => c != null) as Child[],
+      children: children.filter((c) => c != null) as Child[],
     },
   };
 }
@@ -23,19 +25,21 @@ export function h(
 export function render(
   vnode: Child,
   container: Element | DocumentFragment | Node,
+  teardowns?: (() => void)[],
 ): void {
   if (vnode == null || typeof vnode === "boolean") return;
 
   if (Array.isArray(vnode)) {
     for (const child of vnode) {
-      render(child, container);
+      render(child, container, teardowns);
     }
     return;
   }
 
   if (isObservable(vnode)) {
     const node = document.createTextNode("");
-    vnode.subscribe((next) => (node.nodeValue = String(next)));
+    const sub = vnode.subscribe((next) => (node.nodeValue = String(next)));
+    if (teardowns) teardowns.push(() => sub.unsubscribe());
     container.appendChild(node);
     return;
   }
@@ -46,26 +50,37 @@ export function render(
   }
 
   if (vnode.tag === Fragment) {
-    for (const child of vnode.props.children ?? []) {
-      render(child, container);
+    const children = Array.isArray(vnode.props.children)
+      ? vnode.props.children
+      : [vnode.props.children];
+    for (const child of children) {
+      render(child, container, teardowns);
     }
     return;
   }
 
-  if (vnode.tag === Show) {
+  if (vnode.tag === ShowTag) {
     if (!isObservable(vnode.props.when)) return;
-    const startAnchor = document.createComment("<!-- show-start -->");
-    const endAnchor = document.createComment("<!-- show-end -->");
+    const startAnchor = document.createComment("show-start");
+    const endAnchor = document.createComment("show-end");
     container.appendChild(startAnchor);
     container.appendChild(endAnchor);
 
-    vnode.props.when.subscribe((next) => {
-      if (next) {
+    let mounted = false;
+    let disposers: (() => void)[] = [];
+
+    const sub = vnode.props.when.subscribe((next) => {
+      if (next && !mounted) {
+        mounted = true;
         const fragment = document.createDocumentFragment();
-        render(vnode.props.children, fragment);
+        render(vnode.props.children, fragment, disposers);
 
         container.insertBefore(fragment, endAnchor);
-      } else {
+      } else if (!next && mounted) {
+        mounted = false;
+        disposers.forEach((fn) => fn());
+        disposers = [];
+
         while (
           startAnchor.nextSibling &&
           startAnchor.nextSibling !== endAnchor
@@ -74,11 +89,18 @@ export function render(
         }
       }
     });
+
+    if (teardowns) {
+      teardowns.push(() => {
+        sub.unsubscribe();
+        disposers.forEach((fn) => fn());
+      });
+    }
     return;
   }
 
   if (typeof vnode.tag === "function") {
-    render(vnode.tag(vnode.props), container);
+    render(vnode.tag(vnode.props), container, teardowns);
     return;
   }
 
@@ -88,13 +110,20 @@ export function render(
     if (key.startsWith("on") && typeof val === "function") {
       el.addEventListener(key.slice(2).toLowerCase(), val as EventListener);
     } else if (isObservable(val)) {
-      val.subscribe((next) => el.setAttribute(key, String(next)));
+      const sub = val.subscribe((next) => el.setAttribute(key, String(next)));
+      if (teardowns) teardowns.push(() => sub.unsubscribe());
     } else {
       el.setAttribute(key, String(val));
     }
   }
-  for (const child of vnode.props.children ?? []) {
-    render(child, el);
+
+  const children = Array.isArray(vnode.props.children)
+    ? vnode.props.children
+    : [vnode.props.children];
+
+  for (const child of children) {
+    render(child, el, teardowns);
   }
+
   container.appendChild(el);
 }
