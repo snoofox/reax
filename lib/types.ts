@@ -19,4 +19,5 @@ export type Child =
   | boolean
   | null
   | undefined
-  | Child[];
+  | Child[]
+  | ((...args: unknown[]) => Child);

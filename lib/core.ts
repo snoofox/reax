@@ -8,6 +8,14 @@ export function Show(props: Props & { when: Observable<boolean> }): VNode {
   return { tag: ShowTag, props };
 }
 
+const ForTag = Symbol("For");
+export function For<T>(props: {
+  each: Observable<T[]>;
+  children: (item: T, index: number) => Child;
+}): VNode {
+  return { tag: ForTag, props: props as unknown as Props };
+}
+
 export function h(
   tag: Tag,
   props: Record<string, unknown> | null,
@@ -94,6 +102,75 @@ export function render(
       teardowns.push(() => {
         sub.unsubscribe();
         disposers.forEach((fn) => fn());
+      });
+    }
+    return;
+  }
+
+  if (vnode.tag === ForTag) {
+    type ForProps = {
+      each: Observable<unknown[]>;
+      children: ((item: unknown, index: number) => Child)[];
+    };
+    const props = vnode.props as unknown as ForProps;
+    if (!isObservable(props.each)) return;
+    const startAnchor = document.createComment("for-start");
+    const endAnchor = document.createComment("for-end");
+    container.appendChild(startAnchor);
+    container.appendChild(endAnchor);
+
+    const map = new Map<
+      unknown,
+      { nodes: Node[]; disposers: (() => void)[] }
+    >();
+
+    const sub = props.each.subscribe((arr) => {
+      for (const item of map.keys()) {
+        if (!arr.includes(item)) {
+          const cached = map.get(item)!;
+          cached.disposers.forEach((fn) => fn());
+          cached.nodes.forEach((node) => container.removeChild(node));
+          map.delete(item);
+        }
+      }
+
+      let insertPoint: Node = endAnchor;
+
+      for (let i = arr.length - 1; i >= 0; i--) {
+        const item = arr[i];
+
+        if (!map.has(item)) {
+          const fragment = document.createDocumentFragment();
+          const itemDisposers: (() => void)[] = [];
+
+          const childVNode = props.children[0](item, i);
+          render(childVNode, fragment, itemDisposers);
+
+          const nodes = Array.from(fragment.childNodes);
+
+          container.insertBefore(fragment, insertPoint);
+          map.set(item, { nodes, disposers: itemDisposers });
+
+          insertPoint = nodes[0];
+        } else {
+          const cached = map.get(item) as {
+            nodes: Node[];
+            disposers: (() => void)[];
+          };
+          cached.nodes.forEach((node: Node) =>
+            container.insertBefore(node, insertPoint),
+          );
+          insertPoint = cached.nodes[0];
+        }
+      }
+    });
+
+    if (teardowns) {
+      teardowns.push(() => {
+        sub.unsubscribe();
+        for (const cached of map.values()) {
+          cached.disposers.forEach((fn: () => void) => fn());
+        }
       });
     }
     return;
