@@ -2,10 +2,10 @@ import { map } from "rxjs";
 import { signal, Show } from "reax";
 
 export const App = () => {
-  const [tab$, setTab] = signal<"counter" | "profile" | "settings">("counter");
-  const [count$, setCount, getCount] = signal(0);
-  const [name$, setName, getName] = signal("Ash");
-  const [notif$, setNotif] = signal(false);
+  const tab$ = signal<"counter" | "profile" | "settings">("counter");
+  const count$ = signal(0);
+  const name$ = signal("Ash");
+  const notif$ = signal(false);
 
   const isCounter$ = tab$.pipe(map((t) => t === "counter"));
   const isProfile$ = tab$.pipe(map((t) => t === "profile"));
@@ -24,7 +24,7 @@ export const App = () => {
       <Show when={notif$}>
         <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 10px 14px; font-size: 13px; color: #166534; margin-bottom: 20px; display: flex; justify-content: space-between;">
           <span>Settings saved.</span>
-          <button onClick={() => setNotif(false)} style="background: none; border: none; cursor: pointer; color: #166534; padding: 0;">✕</button>
+          <button onClick={() => notif$.set(false)} style="background: none; border: none; cursor: pointer; color: #166534; padding: 0;">✕</button>
         </div>
       </Show>
 
@@ -32,7 +32,7 @@ export const App = () => {
       <div style="display: flex; gap: 20px; border-bottom: 1px solid #eee; margin-bottom: 32px;">
         {(["counter", "profile", "settings"] as const).map((t) => (
           <button
-            onClick={() => setTab(t)}
+            onClick={() => tab$.set(t)}
             style="background: none; border: none; border-bottom: 2px solid transparent; padding: 8px 0; font-size: 14px; color: #888; cursor: pointer; text-transform: capitalize;"
           >
             {t}
@@ -46,15 +46,15 @@ export const App = () => {
           <div style="font-size: 64px; font-weight: 700; letter-spacing: -2px; line-height: 1;">{count$}</div>
           <div style="display: flex; gap: 8px; margin-top: 24px;">
             <button
-              onClick={() => setCount(getCount() - 1)}
+              onClick={() => count$.set(count$.value - 1)}
               style="padding: 8px 20px; border: 1px solid #ddd; border-radius: 6px; background: none; cursor: pointer; font-size: 16px;"
             >−</button>
             <button
-              onClick={() => setCount(getCount() + 1)}
+              onClick={() => count$.set(count$.value + 1)}
               style="padding: 8px 20px; border: 1px solid #ddd; border-radius: 6px; background: none; cursor: pointer; font-size: 16px;"
             >+</button>
             <button
-              onClick={() => setCount(0)}
+              onClick={() => count$.set(0)}
               style="padding: 8px 20px; border: 1px solid #ddd; border-radius: 6px; background: none; cursor: pointer; font-size: 13px; color: #888; margin-left: auto;"
             >reset</button>
           </div>
@@ -72,7 +72,7 @@ export const App = () => {
           <input
             style="margin-top: 20px; padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; width: 100%; box-sizing: border-box;"
             placeholder="Change name..."
-            onInput={(e: Event) => setName((e.target as HTMLInputElement).value || getName())}
+            onInput={(e: Event) => name$.set((e.target as HTMLInputElement).value || name$.value)}
           />
         </div>
       </Show>
@@ -94,7 +94,7 @@ export const App = () => {
             </div>
           ))}
           <button
-            onClick={() => setNotif(true)}
+            onClick={() => notif$.set(true)}
             style="margin-top: 8px; padding: 10px; border: 1px solid #111; border-radius: 6px; background: #111; color: white; font-size: 13px; cursor: pointer; font-weight: 500;"
           >
             Save settings

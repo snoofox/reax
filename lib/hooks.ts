@@ -1,10 +1,20 @@
 import { BehaviorSubject, combineLatest, Observable, Subscription } from "rxjs";
 
-export function signal<T>(
-  initial: T,
-): [Observable<T>, (v: T) => void, () => T] {
+export type Signal<T> = Observable<T> & {
+  get value(): T;
+  set(v: T): void;
+};
+
+export function signal<T>(initial: T): Signal<T> {
   const $ = new BehaviorSubject<T>(initial);
-  return [$.asObservable(), (v: T) => $.next(v), () => $.value];
+  const obs = $.asObservable() as any;
+
+  Object.defineProperty(obs, "value", {
+    get: () => $.value,
+  });
+  obs.set = (v: T) => $.next(v);
+
+  return obs as Signal<T>;
 }
 
 export function effect<T extends unknown[]>(
