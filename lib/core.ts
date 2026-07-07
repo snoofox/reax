@@ -1,4 +1,4 @@
-import { isObservable, Observable } from "rxjs";
+import { isObservable, Observable, combineLatest } from "rxjs";
 import type { Child, VNode, Tag, Props } from "./types.ts";
 
 export const Fragment = Symbol("Fragment");
@@ -14,6 +14,16 @@ export function For<T>(props: {
   children: (item: T, index: number) => Child;
 }): VNode {
   return { tag: ForTag, props: props as unknown as Props };
+}
+
+const SwitchTag = Symbol("Switch")
+export function Switch(props: Props & { fallback: Child }): VNode {
+  return { tag: SwitchTag, props: props }
+}
+
+const MatchTag = Symbol("Match")
+export function Match(props: Props & { when: Observable<boolean> }): VNode {
+  return { tag: MatchTag, props: props }
 }
 
 export function h(
@@ -170,6 +180,67 @@ export function render(
         sub.unsubscribe();
         for (const cached of map.values()) {
           cached.disposers.forEach((fn: () => void) => fn());
+        }
+      });
+    }
+    return;
+  }
+
+  if (vnode.tag === SwitchTag) {
+    const child = vnode.props.children;
+    if (!Array.isArray(child) || child.length === 0) return;
+    if (!child.every((c): c is VNode => c !== null && typeof c === 'object' && 'tag' in c)) return;
+
+    const startAnchor = document.createComment("switch-start");
+    const endAnchor = document.createComment("switch-end");
+    container.appendChild(startAnchor);
+    container.appendChild(endAnchor);
+
+    const vnodes = child as VNode[];
+    const subs: { match: VNode, when: Observable<boolean> }[] = []
+
+    for (const childNode of vnodes) {
+      const match = (typeof childNode.tag === "function" ? childNode.tag(childNode.props) : childNode) as VNode;
+      if (match.tag !== MatchTag) return;
+
+      const when = match.props.when as Observable<boolean>;
+      if (!isObservable(when)) return;
+      subs.push({ match, when })
+    }
+
+    const map = new Map<number, { nodes: Node[], disposers: (() => void)[] }>()
+    const sub = combineLatest(subs.map((sub) => sub.when)).subscribe((arr) => {
+      const index = arr.findIndex(x => x === true);
+
+      for (const [key, value] of map) {
+        if (key !== index) {
+          value.disposers.forEach((fn) => fn())
+          value.nodes.forEach((node) => container.removeChild(node))
+          map.delete(key)
+        }
+      }
+      if (map.has(index)) return;
+
+      const fragment = document.createDocumentFragment();
+      let disposers: (() => void)[] = []
+
+      if (index !== -1) {
+        const match = subs[index].match
+        render(match.props.children as Child, fragment, disposers);
+      } else if (vnode.props.fallback !== undefined) {
+        render(vnode.props.fallback as Child, fragment, disposers);
+      }
+
+      const nodes = Array.from(fragment.childNodes)
+      container.insertBefore(fragment, endAnchor);
+      map.set(index, { nodes, disposers })
+    })
+
+    if (teardowns) {
+      teardowns.push(() => {
+        sub.unsubscribe();
+        for (const value of map.values()) {
+          value.disposers.forEach((fn) => fn());
         }
       });
     }

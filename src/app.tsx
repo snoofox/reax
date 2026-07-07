@@ -1,19 +1,34 @@
 import { map } from "rxjs";
-import { signal, Show, For } from "reax";
+import { signal, Show, For, Switch, Match } from "reax";
 
 type Todo = { id: number; text: string; done: boolean };
 type User = { id: number; name: string };
 
 export const App = () => {
-  const tab$ = signal<"counter" | "tasks" | "team" | "settings">("tasks");
+  const tab$ = signal<"counter" | "tasks" | "team" | "settings" | "switch">("switch");
   const count$ = signal(0);
   const notif$ = signal(false);
+
+  const fetchStatus$ = signal<"idle" | "loading" | "success" | "error">("idle");
+  const fetchError$ = signal("");
+
+  const simulateFetch = () => {
+    fetchStatus$.set("loading");
+    setTimeout(() => {
+      if (Math.random() > 0.4) {
+        fetchStatus$.set("success");
+      } else {
+        fetchError$.set("Network timeout. Please try again.");
+        fetchStatus$.set("error");
+      }
+    }, 1200);
+  };
 
   const todos$ = signal<Todo[]>([
     { id: 1, text: "Buy groceries", done: false },
     { id: 2, text: "Write reax framework", done: true }
   ]);
-  
+
   const users$ = signal<User[]>([
     { id: 1, name: "Ash" },
     { id: 2, name: "Misty" }
@@ -26,6 +41,7 @@ export const App = () => {
   const isTasks$ = tab$.pipe(map(t => t === "tasks"));
   const isTeam$ = tab$.pipe(map(t => t === "team"));
   const isSettings$ = tab$.pipe(map(t => t === "settings"));
+  const isSwitch$ = tab$.pipe(map(t => t === "switch"));
 
   const addTodo = () => {
     if (!newTodo$.value.trim()) return;
@@ -67,7 +83,7 @@ export const App = () => {
       </Show>
 
       <div style="display: flex; gap: 20px; border-bottom: 1px solid #eee; margin-bottom: 32px;">
-        {(["counter", "tasks", "team", "settings"] as const).map((t) => (
+        {(["counter", "tasks", "team", "settings", "switch"] as const).map((t) => (
           <button
             onClick={() => tab$.set(t)}
             style="background: none; border: none; border-bottom: 2px solid transparent; padding: 8px 0; font-size: 14px; color: #888; cursor: pointer; text-transform: capitalize;"
@@ -91,8 +107,8 @@ export const App = () => {
       <Show when={isTasks$}>
         <div>
           <div style="display: flex; gap: 8px; margin-bottom: 24px;">
-            <input 
-              value={newTodo$} 
+            <input
+              value={newTodo$}
               onInput={(e: Event) => newTodo$.set((e.target as HTMLInputElement).value)}
               onKeyDown={(e: KeyboardEvent) => e.key === 'Enter' && addTodo()}
               placeholder="What needs to be done?"
@@ -108,7 +124,7 @@ export const App = () => {
                 return (
                   <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; background: #fafafa; border: 1px solid #eee; border-radius: 8px;">
                     <div style="display: flex; align-items: center; gap: 12px;">
-                      <button 
+                      <button
                         onClick={() => toggleTodo(todo.id)}
                         style="width: 18px; height: 18px; border-radius: 4px; border: 1px solid #ccc; background: none; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0;"
                       >
@@ -130,8 +146,8 @@ export const App = () => {
       <Show when={isTeam$}>
         <div>
           <div style="display: flex; gap: 8px; margin-bottom: 24px;">
-            <input 
-              value={newUser$} 
+            <input
+              value={newUser$}
               onInput={(e: Event) => newUser$.set((e.target as HTMLInputElement).value)}
               onKeyDown={(e: KeyboardEvent) => e.key === 'Enter' && addUser()}
               placeholder="Invite member..."
@@ -154,6 +170,54 @@ export const App = () => {
                 </div>
               )}
             </For>
+          </div>
+        </div>
+      </Show>
+
+      <Show when={isSwitch$}>
+        <div>
+          <div style="display: flex; gap: 8px; margin-bottom: 24px;">
+            <button
+              onClick={simulateFetch}
+              style="flex: 1; padding: 10px 12px; background: #111; color: #fff; border: none; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer;"
+            >
+              Simulate Request
+            </button>
+            <button
+              onClick={() => fetchStatus$.set("idle")}
+              style="padding: 10px 16px; background: transparent; color: #111; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer;"
+            >
+              Reset
+            </button>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <Switch fallback={<div style="padding: 12px 16px; background: #fafafa; border: 1px solid #eee; border-radius: 8px; font-size: 13px; color: #888; text-align: center;">Ready to fetch. Click the button above!</div>}>
+              <Match when={fetchStatus$.pipe(map(s => s === "loading"))}>
+                <div style="padding: 12px 16px; background: #fafafa; border: 1px solid #eee; border-radius: 8px; display: flex; align-items: center; justify-content: center; gap: 12px;">
+                  <div style="width: 14px; height: 14px; border: 2px solid #ddd; border-top-color: #111; border-radius: 50%; animation: spin 1s linear infinite;" />
+                  <span style="font-size: 13px; color: #555;">Connecting...</span>
+                  <style>{"@keyframes spin { to { transform: rotate(360deg); } }"}</style>
+                </div>
+              </Match>
+              <Match when={fetchStatus$.pipe(map(s => s === "error"))}>
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; background: #fffaf0; border: 1px solid #ffe4e6; border-radius: 8px;">
+                  <div style="display: flex; align-items: center; gap: 12px;">
+                    <span style="font-size: 13px; color: #e11d48; font-weight: 500;">Fetch Failed</span>
+                  </div>
+                  <span style="font-size: 13px; color: #f43f5e;">{fetchError$}</span>
+                </div>
+              </Match>
+              <Match when={fetchStatus$.pipe(map(s => s === "success"))}>
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border: 1px solid #eee; border-radius: 8px;">
+                  <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="width: 28px; height: 28px; border-radius: 50%; background: #111; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600;">A</div>
+                    <span style="font-size: 14px; font-weight: 500; color: #111;">Arch User</span>
+                  </div>
+                  <span style="font-size: 12px; color: #999;">Premium Member</span>
+                </div>
+              </Match>
+            </Switch>
           </div>
         </div>
       </Show>
