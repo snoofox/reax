@@ -1,11 +1,12 @@
 import { map } from "rxjs";
 import { signal, Show, For, Switch, Match } from "reax";
+import { Timer } from "./timer";
 
 type Todo = { id: number; text: string; done: boolean };
 type User = { id: number; name: string };
 
 export const App = () => {
-  const tab$ = signal<"counter" | "tasks" | "team" | "settings" | "switch">("switch");
+  const tab$ = signal<"counter" | "tasks" | "team" | "settings" | "switch" | "timer">("switch");
   const count$ = signal(0);
   const notif$ = signal(false);
 
@@ -42,6 +43,7 @@ export const App = () => {
   const isTeam$ = tab$.pipe(map(t => t === "team"));
   const isSettings$ = tab$.pipe(map(t => t === "settings"));
   const isSwitch$ = tab$.pipe(map(t => t === "switch"));
+  const isTimer$ = tab$.pipe(map(t => t === "timer"));
 
   const addTodo = () => {
     if (!newTodo$.value.trim()) return;
@@ -83,7 +85,7 @@ export const App = () => {
       </Show>
 
       <div style="display: flex; gap: 20px; border-bottom: 1px solid #eee; margin-bottom: 32px;">
-        {(["counter", "tasks", "team", "settings", "switch"] as const).map((t) => (
+        {(["counter", "tasks", "team", "settings", "switch", "timer"] as const).map((t) => (
           <button
             onClick={() => tab$.set(t)}
             style="background: none; border: none; border-bottom: 2px solid transparent; padding: 8px 0; font-size: 14px; color: #888; cursor: pointer; text-transform: capitalize;"
@@ -241,6 +243,10 @@ export const App = () => {
             Save settings
           </button>
         </div>
+      </Show>
+
+      <Show when={isTimer$}>
+        <Timer />
       </Show>
 
     </div>

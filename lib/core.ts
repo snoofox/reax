@@ -1,4 +1,4 @@
-import { isObservable, Observable, combineLatest } from "rxjs";
+import { isObservable, Observable, combineLatest, BehaviorSubject } from "rxjs";
 import type { Child, VNode, Tag, Props } from "./types.ts";
 
 export const Fragment = Symbol("Fragment");
@@ -11,7 +11,7 @@ export function Show(props: Props & { when: Observable<boolean> }): VNode {
 const ForTag = Symbol("For");
 export function For<T>(props: {
   each: Observable<T[]>;
-  children: (item: T, index: number) => Child;
+  children: (item: T, index: Observable<number>) => Child;
 }): VNode {
   return { tag: ForTag, props: props as unknown as Props };
 }
@@ -40,7 +40,26 @@ export function h(
   };
 }
 
-export function render(
+let _mounts: (() => void)[] = [];
+let _unmounts: (() => void)[] | null = null;
+let _depth = 0;
+
+export function onMount(fn: () => void) {
+  if (_depth === 0) {
+    console.warn("[reax] onMount called outside a component. Ignoring.")
+  }
+  _mounts.push(fn)
+}
+
+export function onUnmount(fn: () => void) {
+  if (_unmounts === null) {
+    console.warn("[reax] onUnmount called outside a component. Ignoring.");
+    return;
+  }
+  _unmounts?.push(fn)
+}
+
+function _render(
   vnode: Child,
   container: Element | DocumentFragment | Node,
   teardowns?: (() => void)[],
@@ -120,7 +139,7 @@ export function render(
   if (vnode.tag === ForTag) {
     type ForProps = {
       each: Observable<unknown[]>;
-      children: ((item: unknown, index: number) => Child)[];
+      children: ((item: unknown, index: Observable<number>) => Child)[];
     };
     const props = vnode.props as unknown as ForProps;
     if (!isObservable(props.each)) return;
@@ -131,7 +150,7 @@ export function render(
 
     const map = new Map<
       unknown,
-      { nodes: Node[]; disposers: (() => void)[] }
+      { nodes: Node[]; disposers: (() => void)[]; index$: BehaviorSubject<number> }
     >();
 
     const sub = props.each.subscribe((arr) => {
@@ -152,21 +171,21 @@ export function render(
         if (!map.has(item)) {
           const fragment = document.createDocumentFragment();
           const itemDisposers: (() => void)[] = [];
-
-          const childVNode = props.children[0](item, i);
+          const index$ = new BehaviorSubject(i)
+          const childVNode = props.children[0](item, index$.asObservable());
           render(childVNode, fragment, itemDisposers);
 
           const nodes = Array.from(fragment.childNodes);
 
           container.insertBefore(fragment, insertPoint);
-          map.set(item, { nodes, disposers: itemDisposers });
+          map.set(item, { nodes, disposers: itemDisposers, index$ });
 
           insertPoint = nodes[0];
         } else {
-          const cached = map.get(item) as {
-            nodes: Node[];
-            disposers: (() => void)[];
-          };
+          const cached = map.get(item)
+
+          if (!cached) return
+          cached.index$.next(i)
           cached.nodes.forEach((node: Node) =>
             container.insertBefore(node, insertPoint),
           );
@@ -180,6 +199,7 @@ export function render(
         sub.unsubscribe();
         for (const cached of map.values()) {
           cached.disposers.forEach((fn: () => void) => fn());
+          cached.index$.complete()
         }
       });
     }
@@ -190,11 +210,6 @@ export function render(
     const child = vnode.props.children;
     if (!Array.isArray(child) || child.length === 0) return;
     if (!child.every((c): c is VNode => c !== null && typeof c === 'object' && 'tag' in c)) return;
-
-    const startAnchor = document.createComment("switch-start");
-    const endAnchor = document.createComment("switch-end");
-    container.appendChild(startAnchor);
-    container.appendChild(endAnchor);
 
     const vnodes = child as VNode[];
     const subs: { match: VNode, when: Observable<boolean> }[] = []
@@ -207,6 +222,11 @@ export function render(
       if (!isObservable(when)) return;
       subs.push({ match, when })
     }
+
+    const startAnchor = document.createComment("switch-start");
+    const endAnchor = document.createComment("switch-end");
+    container.appendChild(startAnchor);
+    container.appendChild(endAnchor);
 
     const map = new Map<number, { nodes: Node[], disposers: (() => void)[] }>()
     const sub = combineLatest(subs.map((sub) => sub.when)).subscribe((arr) => {
@@ -248,7 +268,10 @@ export function render(
   }
 
   if (typeof vnode.tag === "function") {
-    render(vnode.tag(vnode.props), container, teardowns);
+    const prev = _unmounts
+    _unmounts = teardowns ?? []
+    render(vnode.tag(vnode.props), container, _unmounts);
+    _unmounts = prev
     return;
   }
 
@@ -274,4 +297,20 @@ export function render(
   }
 
   container.appendChild(el);
+}
+
+export function render(
+  vnode: Child,
+  container: Element | DocumentFragment | Node,
+  teardowns?: (() => void)[]) {
+  const root = _depth === 0;
+  _depth++;
+
+  _render(vnode, container, teardowns)
+
+  _depth--;
+
+  if (root) {
+    for (const fn of _mounts.splice(0)) fn();
+  }
 }
