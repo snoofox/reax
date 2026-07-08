@@ -1,6 +1,9 @@
 import type { Observable } from "rxjs";
 
-export type Props = Record<string, unknown> & { children?: Child | Child[] };
+export type Props = {
+  children?: unknown;
+  [key: string]: unknown;
+};
 
 export type Component = (props: Props) => Child;
 
@@ -19,5 +22,4 @@ export type Child =
   | boolean
   | null
   | undefined
-  | Child[]
-  | ((...args: unknown[]) => Child);
+  | Child[];

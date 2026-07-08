@@ -7,23 +7,35 @@ const ShowTag = Symbol("Show");
 export function Show(props: Props & { when: Observable<boolean> }): VNode {
   return { tag: ShowTag, props };
 }
+function isShowNode(vnode: VNode): vnode is VNode & { props: { when: Observable<boolean>; children?: Child | Child[] } } {
+  return vnode.tag === ShowTag;
+}
 
 const ForTag = Symbol("For");
 export function For<T>(props: {
   each: Observable<T[]>;
   children: (item: T, index: Observable<number>) => Child;
 }): VNode {
-  return { tag: ForTag, props: props as unknown as Props };
+  return { tag: ForTag, props };
+}
+function isForNode(vnode: VNode): vnode is VNode & { props: { each: Observable<unknown[]>; children: ((item: unknown, index: Observable<number>) => Child)[] } } {
+  return vnode.tag === ForTag;
 }
 
-const SwitchTag = Symbol("Switch")
-export function Switch(props: Props & { fallback: Child }): VNode {
-  return { tag: SwitchTag, props: props }
+const SwitchTag = Symbol("Switch");
+export function Switch(props: Props & { fallback?: Child }): VNode {
+  return { tag: SwitchTag, props };
+}
+function isSwitchNode(vnode: VNode): vnode is VNode & { props: { fallback?: Child; children?: unknown } } {
+  return vnode.tag === SwitchTag;
 }
 
-const MatchTag = Symbol("Match")
+const MatchTag = Symbol("Match");
 export function Match(props: Props & { when: Observable<boolean> }): VNode {
-  return { tag: MatchTag, props: props }
+  return { tag: MatchTag, props };
+}
+function isMatchNode(vnode: VNode): vnode is VNode & { props: { when: Observable<boolean>; children?: Child | Child[] } } {
+  return vnode.tag === MatchTag;
 }
 
 export function h(
@@ -35,7 +47,7 @@ export function h(
     tag,
     props: {
       ...props,
-      children: children.filter((c) => c != null) as Child[],
+      children: children.filter((c): c is Child => c != null),
     },
   };
 }
@@ -46,9 +58,10 @@ let _depth = 0;
 
 export function onMount(fn: () => void) {
   if (_depth === 0) {
-    console.warn("[reax] onMount called outside a component. Ignoring.")
+    console.warn("[reax] onMount called outside a component. Ignoring.");
+    return;
   }
-  _mounts.push(fn)
+  _mounts.push(fn);
 }
 
 export function onUnmount(fn: () => void) {
@@ -56,7 +69,7 @@ export function onUnmount(fn: () => void) {
     console.warn("[reax] onUnmount called outside a component. Ignoring.");
     return;
   }
-  _unmounts?.push(fn)
+  _unmounts.push(fn);
 }
 
 function _render(
@@ -96,7 +109,7 @@ function _render(
     return;
   }
 
-  if (vnode.tag === ShowTag) {
+  if (isShowNode(vnode)) {
     if (!isObservable(vnode.props.when)) return;
     const startAnchor = document.createComment("show-start");
     const endAnchor = document.createComment("show-end");
@@ -112,7 +125,7 @@ function _render(
         const fragment = document.createDocumentFragment();
         render(vnode.props.children, fragment, disposers);
 
-        container.insertBefore(fragment, endAnchor);
+        endAnchor.parentNode!.insertBefore(fragment, endAnchor);
       } else if (!next && mounted) {
         mounted = false;
         disposers.forEach((fn) => fn());
@@ -122,7 +135,7 @@ function _render(
           startAnchor.nextSibling &&
           startAnchor.nextSibling !== endAnchor
         ) {
-          container.removeChild(startAnchor.nextSibling);
+          startAnchor.parentNode?.removeChild(startAnchor.nextSibling);
         }
       }
     });
@@ -131,17 +144,21 @@ function _render(
       teardowns.push(() => {
         sub.unsubscribe();
         disposers.forEach((fn) => fn());
+        if (startAnchor.parentNode) {
+          while (
+            startAnchor.nextSibling &&
+            startAnchor.nextSibling !== endAnchor
+          ) {
+            startAnchor.parentNode.removeChild(startAnchor.nextSibling);
+          }
+        }
       });
     }
     return;
   }
 
-  if (vnode.tag === ForTag) {
-    type ForProps = {
-      each: Observable<unknown[]>;
-      children: ((item: unknown, index: Observable<number>) => Child)[];
-    };
-    const props = vnode.props as unknown as ForProps;
+  if (isForNode(vnode)) {
+    const props = vnode.props;
     if (!isObservable(props.each)) return;
     const startAnchor = document.createComment("for-start");
     const endAnchor = document.createComment("for-end");
@@ -156,9 +173,12 @@ function _render(
     const sub = props.each.subscribe((arr) => {
       for (const item of map.keys()) {
         if (!arr.includes(item)) {
-          const cached = map.get(item)!;
+          const cached = map.get(item);
+          if (!cached) continue;
           cached.disposers.forEach((fn) => fn());
-          cached.nodes.forEach((node) => container.removeChild(node));
+          cached.nodes.forEach((node) => {
+            if (node.parentNode) node.parentNode.removeChild(node);
+          });
           map.delete(item);
         }
       }
@@ -177,7 +197,7 @@ function _render(
 
           const nodes = Array.from(fragment.childNodes);
 
-          container.insertBefore(fragment, insertPoint);
+          insertPoint.parentNode!.insertBefore(fragment, insertPoint);
           map.set(item, { nodes, disposers: itemDisposers, index$ });
 
           insertPoint = nodes[0];
@@ -187,7 +207,7 @@ function _render(
           if (!cached) return
           cached.index$.next(i)
           cached.nodes.forEach((node: Node) =>
-            container.insertBefore(node, insertPoint),
+            insertPoint.parentNode!.insertBefore(node, insertPoint),
           );
           insertPoint = cached.nodes[0];
         }
@@ -201,26 +221,41 @@ function _render(
           cached.disposers.forEach((fn: () => void) => fn());
           cached.index$.complete()
         }
+        if (startAnchor.parentNode) {
+          while (
+            startAnchor.nextSibling &&
+            startAnchor.nextSibling !== endAnchor
+          ) {
+            startAnchor.parentNode.removeChild(startAnchor.nextSibling);
+          }
+        }
       });
     }
     return;
   }
 
-  if (vnode.tag === SwitchTag) {
+  if (isSwitchNode(vnode)) {
     const child = vnode.props.children;
     if (!Array.isArray(child) || child.length === 0) return;
-    if (!child.every((c): c is VNode => c !== null && typeof c === 'object' && 'tag' in c)) return;
 
-    const vnodes = child as VNode[];
-    const subs: { match: VNode, when: Observable<boolean> }[] = []
+    const vnodes: VNode[] = [];
+    for (const c of child) {
+      if (c !== null && typeof c === "object" && "tag" in c) {
+        vnodes.push(c);
+      }
+    }
+    if (vnodes.length === 0) return;
+
+    const subs: { match: VNode & { props: { when: Observable<boolean>; children?: Child | Child[] } }; when: Observable<boolean> }[] = [];
 
     for (const childNode of vnodes) {
-      const match = (typeof childNode.tag === "function" ? childNode.tag(childNode.props) : childNode) as VNode;
-      if (match.tag !== MatchTag) return;
+      const match = typeof childNode.tag === "function" ? childNode.tag(childNode.props) : childNode;
+      if (match === null || typeof match !== "object" || !("tag" in match)) continue;
+      if (!isMatchNode(match)) continue;
 
-      const when = match.props.when as Observable<boolean>;
-      if (!isObservable(when)) return;
-      subs.push({ match, when })
+      const when = match.props.when;
+      if (!isObservable(when)) continue;
+      subs.push({ match, when });
     }
 
     const startAnchor = document.createComment("switch-start");
@@ -235,7 +270,9 @@ function _render(
       for (const [key, value] of map) {
         if (key !== index) {
           value.disposers.forEach((fn) => fn())
-          value.nodes.forEach((node) => container.removeChild(node))
+          value.nodes.forEach((node) => {
+            if (node.parentNode) node.parentNode.removeChild(node);
+          })
           map.delete(key)
         }
       }
@@ -245,14 +282,14 @@ function _render(
       let disposers: (() => void)[] = []
 
       if (index !== -1) {
-        const match = subs[index].match
-        render(match.props.children as Child, fragment, disposers);
+        const match = subs[index].match;
+        render(match.props.children, fragment, disposers);
       } else if (vnode.props.fallback !== undefined) {
-        render(vnode.props.fallback as Child, fragment, disposers);
+        render(vnode.props.fallback, fragment, disposers);
       }
 
       const nodes = Array.from(fragment.childNodes)
-      container.insertBefore(fragment, endAnchor);
+      endAnchor.parentNode!.insertBefore(fragment, endAnchor);
       map.set(index, { nodes, disposers })
     })
 
@@ -262,24 +299,36 @@ function _render(
         for (const value of map.values()) {
           value.disposers.forEach((fn) => fn());
         }
+        if (startAnchor.parentNode) {
+          while (
+            startAnchor.nextSibling &&
+            startAnchor.nextSibling !== endAnchor
+          ) {
+            startAnchor.parentNode.removeChild(startAnchor.nextSibling);
+          }
+        }
       });
     }
     return;
   }
 
   if (typeof vnode.tag === "function") {
-    const prev = _unmounts
-    _unmounts = teardowns ?? []
-    render(vnode.tag(vnode.props), container, _unmounts);
-    _unmounts = prev
+    const prev = _unmounts;
+    _unmounts = teardowns ?? [];
+    try {
+      render(vnode.tag(vnode.props), container, _unmounts);
+    } finally {
+      _unmounts = prev;
+    }
     return;
   }
 
-  const el = document.createElement(vnode.tag as string);
+  if (typeof vnode.tag !== "string") return;
+  const el = document.createElement(vnode.tag);
   for (const [key, val] of Object.entries(vnode.props ?? {})) {
     if (key === "children" || key === "__self" || key === "__source") continue;
     if (key.startsWith("on") && typeof val === "function") {
-      el.addEventListener(key.slice(2).toLowerCase(), val as EventListener);
+      el.addEventListener(key.slice(2).toLowerCase(), (e) => val(e));
     } else if (isObservable(val)) {
       const sub = val.subscribe((next) => el.setAttribute(key, String(next)));
       if (teardowns) teardowns.push(() => sub.unsubscribe());
@@ -306,11 +355,18 @@ export function render(
   const root = _depth === 0;
   _depth++;
 
-  _render(vnode, container, teardowns)
-
-  _depth--;
+  try {
+    _render(vnode, container, teardowns);
+  } finally {
+    _depth--;
+  }
 
   if (root) {
-    for (const fn of _mounts.splice(0)) fn();
+    const mounts = _mounts.splice(0);
+    if (mounts.length > 0) {
+      queueMicrotask(() => {
+        for (const fn of mounts) fn();
+      });
+    }
   }
 }
