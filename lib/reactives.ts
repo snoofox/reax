@@ -6,18 +6,31 @@ export type Signal<T> = Observable<T> & {
 };
 
 export function signal<T>(initial: T): Signal<T> {
-  const $ = new BehaviorSubject<T>(initial);
-  const obs = $.asObservable() as any;
+  const subject = new BehaviorSubject<T>(initial);
+  const observable = subject.asObservable();
 
-  Object.defineProperty(obs, "value", {
-    get: () => $.value,
+  const sig = Object.defineProperties(observable, {
+    value: {
+      get(): T {
+        return subject.value;
+      },
+      enumerable: true,
+      configurable: true,
+    },
+    set: {
+      value(v: T): void {
+        subject.next(v);
+      },
+      writable: false,
+      enumerable: true,
+      configurable: true,
+    },
   });
-  obs.set = (v: T) => $.next(v);
 
-  return obs as Signal<T>;
+  return sig as unknown as Signal<T>;
 }
 
-export function effect<T extends unknown[]>(
+export function effect<T extends readonly unknown[]>(
   fn: (...args: T) => void,
   deps: [...{ [K in keyof T]: Observable<T[K]> }],
 ): Subscription {

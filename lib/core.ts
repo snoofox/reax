@@ -18,7 +18,14 @@ export function For<T>(props: {
 }): VNode {
   return { tag: ForTag, props };
 }
-function isForNode(vnode: VNode): vnode is VNode & { props: { each: Observable<unknown[]>; children: ((item: unknown, index: Observable<number>) => Child)[] } } {
+function isForNode(vnode: VNode): vnode is VNode & {
+  props: {
+    each: Observable<unknown[]>;
+    children:
+      | ((item: unknown, index: Observable<number>) => Child)
+      | ((item: unknown, index: Observable<number>) => Child)[];
+  };
+} {
   return vnode.tag === ForTag;
 }
 
@@ -192,7 +199,9 @@ function _render(
           const fragment = document.createDocumentFragment();
           const itemDisposers: (() => void)[] = [];
           const index$ = new BehaviorSubject(i)
-          const childVNode = props.children[0](item, index$.asObservable());
+          const childFn = Array.isArray(props.children) ? props.children[0] : props.children;
+          if (typeof childFn !== "function") continue;
+          const childVNode = childFn(item, index$.asObservable());
           render(childVNode, fragment, itemDisposers);
 
           const nodes = Array.from(fragment.childNodes);
@@ -235,8 +244,13 @@ function _render(
   }
 
   if (isSwitchNode(vnode)) {
-    const child = vnode.props.children;
-    if (!Array.isArray(child) || child.length === 0) return;
+    const rawChildren = vnode.props.children;
+    const child = Array.isArray(rawChildren)
+      ? rawChildren
+      : rawChildren != null
+        ? [rawChildren]
+        : [];
+    if (child.length === 0) return;
 
     const vnodes: VNode[] = [];
     for (const c of child) {

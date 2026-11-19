@@ -2,8 +2,13 @@ import { defineConfig } from "vite";
 
 export default defineConfig({
   oxc: {
-    jsx: { runtime: "classic", pragma: "h", pragmaFrag: "Fragment" },
-    jsxInject: `import { h, Fragment } from "/lib/index.ts"`,
+    jsx: { runtime: "automatic", importSource: "reax" },
   },
-  resolve: { alias: { reax: "/lib/index.ts" } },
+  resolve: {
+    alias: {
+      "reax/jsx-dev-runtime": "/lib/jsx-dev-runtime.ts",
+      "reax/jsx-runtime": "/lib/jsx-runtime.ts",
+      reax: "/lib/index.ts",
+    },
+  },
 });

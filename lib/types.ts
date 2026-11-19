@@ -12,6 +12,7 @@ export type Tag = string | symbol | Component;
 export interface VNode {
   tag: Tag;
   props: Props;
+  key?: unknown;
 }
 
 export type Child =
