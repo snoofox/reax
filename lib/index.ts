@@ -2,8 +2,13 @@ export { render, onMount, onUnmount } from "./dom/render";
 export { Show } from "./components/show";
 export { For, type KeyFn } from "./components/for";
 export { Switch, Match } from "./components/switch";
-export { signal, type Signal, type SignalOptions } from "./reactivity/signal";
-export { effect } from "./reactivity/effect";
+export {
+  signal,
+  type Signal,
+  type ReadonlySignal,
+  type SignalOptions,
+} from "./reactivity/signal";
+export { computed } from "./reactivity/computed";
 export * from "rxjs";
 export { jsx, jsxs, Fragment } from "./jsx-runtime";
 export { jsxDEV } from "./jsx-dev-runtime";

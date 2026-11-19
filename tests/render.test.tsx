@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { render, signal } from "reax";
+import { render, signal, computed } from "reax";
 
 describe("DOM Rendering", () => {
   let container: HTMLDivElement;
@@ -48,6 +48,18 @@ describe("DOM Rendering", () => {
       count(42);
       expect(span.textContent).toBe("42");
       expect(span.firstChild).toBe(textNode);
+    });
+
+    it("renders computed signal text and updates reactively in JSX", () => {
+      const count = signal(2);
+      const doubled = computed(() => count() * 2);
+      render(<span>{doubled}</span>, container);
+
+      const span = container.querySelector("span")!;
+      expect(span.textContent).toBe("4");
+
+      count(5);
+      expect(span.textContent).toBe("10");
     });
 
     it("renders fragments without wrapper elements", () => {

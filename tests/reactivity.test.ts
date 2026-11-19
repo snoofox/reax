@@ -1,5 +1,11 @@
-import { describe, it, expect, vi } from "vitest";
-import { signal, effect, map, combineLatest, isObservable } from "reax";
+import { describe, it, expect } from "vitest";
+import {
+  signal,
+  computed,
+  map,
+  combineLatest,
+  isObservable,
+} from "reax";
 
 describe("signal", () => {
   it("initializes with initial value and reads synchronously", () => {
@@ -125,49 +131,81 @@ describe("signal", () => {
   });
 });
 
-describe("effect", () => {
-  it("executes immediately with initial dependency values", () => {
-    const a = signal(1);
-    const b = signal(2);
-    const fn = vi.fn();
+describe("computed", () => {
+  it("derives value synchronously from a zero-arg getter", () => {
+    const count = signal(2);
+    const doubled = computed(() => count() * 2);
 
-    effect(fn, [a, b]);
-    expect(fn).toHaveBeenCalledTimes(1);
-    expect(fn).toHaveBeenCalledWith(1, 2);
+    expect(doubled()).toBe(4);
+    expect(doubled.value).toBe(4);
+    expect(isObservable(doubled)).toBe(true);
+
+    count(5);
+    expect(doubled()).toBe(10);
+    expect(doubled.value).toBe(10);
   });
 
-  it("re-runs when any dependency updates", () => {
-    const count = signal(0);
-    let captured = -1;
+  it("auto-tracks multiple signal dependencies", () => {
+    const first = signal("John");
+    const last = signal("Doe");
+    const full = computed(() => `${first()} ${last()}`);
 
-    effect((c) => {
-      captured = c;
-    }, [count]);
+    expect(full()).toBe("John Doe");
 
-    expect(captured).toBe(0);
+    first("Jane");
+    expect(full()).toBe("Jane Doe");
 
-    count(10);
-    expect(captured).toBe(10);
+    last("Smith");
+    expect(full()).toBe("Jane Smith");
+  });
 
+  it("supports chaining multiple computed signals", () => {
+    const num = signal(2);
+    const double = computed(() => num() * 2);
+    const quad = computed(() => double() * 2);
+
+    expect(double()).toBe(4);
+    expect(quad()).toBe(8);
+
+    num(3);
+    expect(double()).toBe(6);
+    expect(quad()).toBe(12);
+  });
+
+  it("supports explicit single observable source and mapper", () => {
+    const count = signal(10);
+    const halved = computed(count, (c) => c / 2);
+
+    expect(halved()).toBe(5);
     count(20);
-    expect(captured).toBe(20);
+    expect(halved()).toBe(10);
   });
 
-  it("stops receiving updates after unsubscribe", () => {
+  it("supports explicit array of observables and mapper", () => {
+    const a = signal(2);
+    const b = signal(3);
+    const sum = computed([a, b], ([x, y]) => x + y);
+
+    expect(sum()).toBe(5);
+    a(10);
+    expect(sum()).toBe(13);
+    b(20);
+    expect(sum()).toBe(30);
+  });
+
+  it("deduplicates emissions when derived output does not change", () => {
     const count = signal(1);
-    let captured = 0;
+    const isOdd = computed(() => count() % 2 === 1);
+    const emissions: boolean[] = [];
 
-    const sub = effect((c) => {
-      captured = c;
-    }, [count]);
+    isOdd.subscribe((v) => emissions.push(v));
+    expect(emissions).toEqual([true]);
 
-    expect(captured).toBe(1);
-
-    count(2);
-    expect(captured).toBe(2);
-
-    sub.unsubscribe();
     count(3);
-    expect(captured).toBe(2);
+    count(5);
+    expect(emissions).toEqual([true]);
+
+    count(4);
+    expect(emissions).toEqual([true, false]);
   });
 });

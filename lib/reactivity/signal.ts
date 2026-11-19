@@ -1,7 +1,24 @@
 import { BehaviorSubject, Observable } from "rxjs";
 
+let _activeListener: Set<Observable<unknown>> | null = null;
+
+export function getActiveListener(): Set<Observable<unknown>> | null {
+  return _activeListener;
+}
+
+export function setActiveListener(
+  listener: Set<Observable<unknown>> | null,
+): void {
+  _activeListener = listener;
+}
+
 export type SignalOptions<T> = {
   equals?: false | ((prev: T, next: T) => boolean);
+};
+
+export type ReadonlySignal<T> = Observable<T> & {
+  (): T;
+  readonly value: T;
 };
 
 export type Signal<T> = Observable<T> & {
@@ -20,7 +37,12 @@ export function signal<T>(initial: T, options?: SignalOptions<T>): Signal<T> {
         : Object.is;
 
   function sig(next?: T | ((prev: T) => T)): T | void {
-    if (arguments.length === 0) return subj.value;
+    if (arguments.length === 0) {
+      if (_activeListener) {
+        _activeListener.add(sig as unknown as Observable<unknown>);
+      }
+      return subj.value;
+    }
     const val =
       typeof next === "function"
         ? (next as (prev: T) => T)(subj.value)
