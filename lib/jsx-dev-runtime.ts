@@ -1,4 +1,4 @@
-import { Fragment } from "./core.ts";
+import { Fragment } from "./jsx-runtime.ts";
 import type { Tag, VNode, Child } from "./types.ts";
 import type { IntrinsicElements } from "./jsx-types.ts";
 

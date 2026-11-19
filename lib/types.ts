@@ -1,4 +1,5 @@
 import type { Observable } from "rxjs";
+export type { Signal } from "./reactivity/signal.ts";
 
 export type Props = {
   children?: unknown;

@@ -1,8 +1,7 @@
-import { Fragment } from "./core.ts";
 import type { Tag, VNode, Child } from "./types.ts";
 import type { IntrinsicElements } from "./jsx-types.ts";
 
-export { Fragment };
+export const Fragment = Symbol.for("reax.fragment");
 export type { IntrinsicElements };
 
 export function jsx(

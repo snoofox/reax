@@ -3,9 +3,25 @@ import type { Child } from "./types.ts";
 
 export type Reactive<T> = T | Observable<T>;
 
-export interface DOMAttributes {
+export type RefCallback<T> = (instance: T | null) => void;
+export interface RefObject<T> {
+  current: T | null;
+}
+export interface SignalRef<T> {
+  set(value: T | null): void;
+}
+export type Ref<T> = RefCallback<T> | RefObject<T> | SignalRef<T>;
+
+export type StyleProp =
+  | string
+  | { [key: string]: Reactive<string | number | boolean | null | undefined> };
+
+export interface DOMAttributes<T = Element> {
   children?: Child;
   key?: unknown;
+  ref?: Ref<T>;
+  dangerouslySetInnerHTML?: { __html: unknown };
+  innerHTML?: Reactive<string>;
 
   onAbort?: (e: UIEvent) => void;
   onAnimationEnd?: (e: AnimationEvent) => void;
@@ -52,11 +68,11 @@ export interface DOMAttributes {
   onWheel?: (e: WheelEvent) => void;
 }
 
-export interface HTMLAttributes extends DOMAttributes {
+export interface HTMLAttributes<T = HTMLElement> extends DOMAttributes<T> {
   id?: Reactive<string>;
-  class?: Reactive<string>;
-  className?: Reactive<string>;
-  style?: Reactive<string>;
+  class?: Reactive<string | boolean>;
+  className?: Reactive<string | boolean>;
+  style?: Reactive<StyleProp>;
   title?: Reactive<string>;
   role?: Reactive<string>;
   tabIndex?: Reactive<number>;
@@ -175,15 +191,28 @@ export interface ImgHTMLAttributes extends HTMLAttributes {
   width?: Reactive<number | string>;
 }
 
-export interface SVGAttributes extends DOMAttributes {
+export interface MediaHTMLAttributes<T = HTMLMediaElement> extends HTMLAttributes<T> {
+  autoPlay?: Reactive<boolean>;
+  controls?: Reactive<boolean>;
+  crossOrigin?: Reactive<"anonymous" | "use-credentials" | "">;
+  loop?: Reactive<boolean>;
+  muted?: Reactive<boolean>;
+  preload?: Reactive<"none" | "metadata" | "auto" | "">;
+  src?: Reactive<string>;
+}
+
+export interface SVGAttributes<T = SVGElement> extends DOMAttributes<T> {
   id?: Reactive<string>;
-  class?: Reactive<string>;
-  className?: Reactive<string>;
-  style?: Reactive<string>;
+  class?: Reactive<string | boolean>;
+  className?: Reactive<string | boolean>;
+  style?: Reactive<StyleProp>;
   viewBox?: Reactive<string>;
   fill?: Reactive<string>;
   stroke?: Reactive<string>;
   strokeWidth?: Reactive<number | string>;
+  "stroke-width"?: Reactive<number | string>;
+  strokeDasharray?: Reactive<number | string>;
+  "stroke-dasharray"?: Reactive<number | string>;
   d?: Reactive<string>;
   cx?: Reactive<number | string>;
   cy?: Reactive<number | string>;
@@ -199,6 +228,8 @@ export interface SVGAttributes extends DOMAttributes {
   width?: Reactive<number | string>;
   height?: Reactive<number | string>;
   xmlns?: Reactive<string>;
+  xlinkHref?: Reactive<string>;
+  "xlink:href"?: Reactive<string>;
   transform?: Reactive<string>;
   points?: Reactive<string>;
   opacity?: Reactive<number | string>;
@@ -211,7 +242,7 @@ export interface IntrinsicElements {
   area: HTMLAttributes;
   article: HTMLAttributes;
   aside: HTMLAttributes;
-  audio: HTMLAttributes;
+  audio: MediaHTMLAttributes;
   b: HTMLAttributes;
   base: HTMLAttributes;
   bdi: HTMLAttributes;
@@ -315,7 +346,7 @@ export interface IntrinsicElements {
   u: HTMLAttributes;
   ul: HTMLAttributes;
   var: HTMLAttributes;
-  video: HTMLAttributes;
+  video: MediaHTMLAttributes;
   wbr: HTMLAttributes;
 
   svg: SVGAttributes;
