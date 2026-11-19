@@ -26,7 +26,7 @@ export function onMount(fn: () => void): void {
 export function onUnmount(fn: () => void): void {
   if (_unmounts === null) {
     console.warn(
-      "[reax] onUnmount called outside a dynamic reactive scope (<Show>, <For>, <Switch>). Root components never unmount.",
+      "[reax] onUnmount called outside a dynamic reactive scope.",
     );
     return;
   }

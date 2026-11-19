@@ -9,6 +9,7 @@ export { Switch, Match } from "./components/switch.ts";
 // Reactivity
 export { signal, type Signal } from "./reactivity/signal.ts";
 export { effect } from "./reactivity/effect.ts";
+export * from "rxjs";
 
 // Automatic JSX & Fragment
 export { jsx, jsxs, Fragment } from "./jsx-runtime.ts";

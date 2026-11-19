@@ -50,24 +50,10 @@ const UNITLESS_PROPERTIES = new Set<string>([
   "strokeWidth",
 ]);
 
-export function createElementWithNS(tag: string, currentNs?: string): Element {
-  if (tag === "svg") {
-    return document.createElementNS(SVG_NS, tag);
-  }
-  if (tag === "math") {
-    return document.createElementNS(MATHML_NS, tag);
-  }
-  if (currentNs === SVG_NS) {
-    return document.createElementNS(SVG_NS, tag);
-  }
-  if (currentNs === MATHML_NS) {
-    return document.createElementNS(MATHML_NS, tag);
-  }
+export function createElementWithNS(tag: string, ns?: string): Element {
+  if (tag === "svg" || ns === SVG_NS) return document.createElementNS(SVG_NS, tag);
+  if (tag === "math" || ns === MATHML_NS) return document.createElementNS(MATHML_NS, tag);
   return document.createElement(tag);
-}
-
-function isUnitlessNumber(name: string): boolean {
-  return UNITLESS_PROPERTIES.has(name);
 }
 
 function toKebabCase(str: string): string {
@@ -81,16 +67,14 @@ export function applyRef(
 ): void {
   if (typeof ref === "function") {
     (ref as (node: Element) => void)(el);
-    if (teardowns) {
-      teardowns.push(() => (ref as (node: Element | null) => void)(null));
-    }
-  } else if (ref != null && typeof ref === "object") {
+    if (teardowns) teardowns.push(() => (ref as (node: Element | null) => void)(null));
+    return;
+  }
+  if (ref != null && typeof ref === "object") {
     if ("set" in ref && typeof (ref as { set: unknown }).set === "function") {
       (ref as { set(node: Element): void }).set(el);
       if (teardowns) {
-        teardowns.push(() =>
-          (ref as { set(node: Element | null): void }).set(null),
-        );
+        teardowns.push(() => (ref as { set(node: Element | null): void }).set(null));
       }
     } else if ("current" in ref) {
       (ref as { current: unknown }).current = el;
@@ -113,17 +97,17 @@ export function applyStyleProp(
     return;
   }
 
-  const strVal =
-    typeof val === "number" && !isUnitlessNumber(prop)
+  const str =
+    typeof val === "number" && !UNITLESS_PROPERTIES.has(prop)
       ? `${val}px`
       : String(val);
 
   if (prop.startsWith("--")) {
-    el.style.setProperty(prop, strVal);
+    el.style.setProperty(prop, str);
   } else if (prop in el.style) {
-    (el.style as unknown as Record<string, string>)[prop] = strVal;
+    (el.style as unknown as Record<string, string>)[prop] = str;
   } else {
-    el.style.setProperty(toKebabCase(prop), strVal);
+    el.style.setProperty(toKebabCase(prop), str);
   }
 }
 
@@ -143,30 +127,24 @@ export function applyStyle(
   }
 
   if (val != null && typeof val === "object") {
-    const currentKeys = new Set(Object.keys(val as Record<string, unknown>));
+    const nextKeys = new Set(Object.keys(val as Record<string, unknown>));
     const prevKeys = prevStyleKeysMap.get(el);
 
     if (prevKeys) {
-      for (const key of prevKeys) {
-        if (!currentKeys.has(key)) {
-          el.style.removeProperty(
-            key.startsWith("--") ? key : toKebabCase(key),
-          );
+      for (const k of prevKeys) {
+        if (!nextKeys.has(k)) {
+          el.style.removeProperty(k.startsWith("--") ? k : toKebabCase(k));
         }
       }
     }
-    prevStyleKeysMap.set(el, currentKeys);
+    prevStyleKeysMap.set(el, nextKeys);
 
     for (const [prop, propVal] of Object.entries(
       val as Record<string, unknown>,
     )) {
       if (isObservable(propVal)) {
-        const sub = propVal.subscribe((v) => {
-          applyStyleProp(el, prop, v);
-        });
-        if (teardowns) {
-          teardowns.push(() => sub.unsubscribe());
-        }
+        const sub = propVal.subscribe((v) => applyStyleProp(el, prop, v));
+        if (teardowns) teardowns.push(() => sub.unsubscribe());
       } else {
         applyStyleProp(el, prop, propVal);
       }
@@ -186,9 +164,7 @@ export function applyAttributeOrProperty(
   val: unknown,
   teardowns?: (() => void)[],
 ): void {
-  if (key === "className") {
-    key = "class";
-  }
+  if (key === "className") key = "class";
 
   if (key === "style") {
     applyStyle(el, val, teardowns);
@@ -221,67 +197,42 @@ export function applyAttributeOrProperty(
       el instanceof HTMLTextAreaElement ||
       el instanceof HTMLSelectElement)
   ) {
-    const strVal = val == null ? "" : String(val);
-    if (el.value !== strVal) {
-      el.value = strVal;
-    }
+    const str = val == null ? "" : String(val);
+    if (el.value !== str) el.value = str;
     return;
   }
 
   if (key === "checked" && el instanceof HTMLInputElement) {
-    const boolVal = Boolean(val);
-    if (el.checked !== boolVal) {
-      el.checked = boolVal;
-    }
-    if (boolVal) {
-      el.setAttribute("checked", "");
-    } else {
-      el.removeAttribute("checked");
-    }
+    const bool = Boolean(val);
+    if (el.checked !== bool) el.checked = bool;
+    if (bool) el.setAttribute("checked", "");
+    else el.removeAttribute("checked");
     return;
   }
 
   if (key === "selected" && el instanceof HTMLOptionElement) {
-    const boolVal = Boolean(val);
-    el.selected = boolVal;
-    if (boolVal) {
-      el.setAttribute("selected", "");
-    } else {
-      el.removeAttribute("selected");
-    }
+    const bool = Boolean(val);
+    if (el.selected !== bool) el.selected = bool;
+    if (bool) el.setAttribute("selected", "");
+    else el.removeAttribute("selected");
     return;
   }
 
   if (key === "muted" && el instanceof HTMLMediaElement) {
-    const boolVal = Boolean(val);
-    el.muted = boolVal;
-    if (boolVal) {
-      el.setAttribute("muted", "");
-    } else {
-      el.removeAttribute("muted");
-    }
+    const bool = Boolean(val);
+    if (el.muted !== bool) el.muted = bool;
+    if (bool) el.setAttribute("muted", "");
+    else el.removeAttribute("muted");
     return;
   }
 
   if (typeof val === "boolean") {
-    if (val) {
-      el.setAttribute(key, "");
-      if (!(el instanceof SVGElement) && key in el) {
-        try {
-          (el as unknown as Record<string, unknown>)[key] = true;
-        } catch {
-          // Ignore read-only properties
-        }
-      }
-    } else {
-      el.removeAttribute(key);
-      if (!(el instanceof SVGElement) && key in el) {
-        try {
-          (el as unknown as Record<string, unknown>)[key] = false;
-        } catch {
-          // Ignore read-only properties
-        }
-      }
+    if (val) el.setAttribute(key, "");
+    else el.removeAttribute(key);
+    if (!(el instanceof SVGElement) && key in el) {
+      try {
+        (el as unknown as Record<string, unknown>)[key] = val;
+      } catch {}
     }
     return;
   }
@@ -309,7 +260,7 @@ export function setProp(
 
   if (key.startsWith("on")) {
     const eventName = key.slice(2).toLowerCase();
-    if (typeof val === "function") {
+    if (typeof val === "function" && !isObservable(val)) {
       const handler = val as (e: Event) => void;
       el.addEventListener(eventName, handler);
       if (teardowns) {
@@ -341,9 +292,7 @@ export function setProp(
     const sub = val.subscribe((next) => {
       applyAttributeOrProperty(el, key, next, teardowns);
     });
-    if (teardowns) {
-      teardowns.push(() => sub.unsubscribe());
-    }
+    if (teardowns) teardowns.push(() => sub.unsubscribe());
     return;
   }
 
