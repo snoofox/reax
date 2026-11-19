@@ -71,6 +71,58 @@ describe("signal", () => {
     last("Smith");
     expect(current).toBe("Jane Smith");
   });
+
+  describe("deduplication & equality", () => {
+    it("does not emit when next value is identical by Object.is", () => {
+      const count = signal(0);
+      const emissions: number[] = [];
+      count.subscribe((v) => emissions.push(v));
+
+      count(0);
+      count(0);
+      expect(emissions).toEqual([0]);
+
+      count(1);
+      count(1);
+      expect(emissions).toEqual([0, 1]);
+    });
+
+    it("treats NaN as equal using Object.is", () => {
+      const num = signal(NaN);
+      const emissions: number[] = [];
+      num.subscribe((v) => emissions.push(v));
+
+      num(NaN);
+      expect(emissions).toEqual([NaN]);
+    });
+
+    it("allows bypassing deduplication with equals: false", () => {
+      const count = signal(0, { equals: false });
+      const emissions: number[] = [];
+      count.subscribe((v) => emissions.push(v));
+
+      count(0);
+      count(0);
+      expect(emissions).toEqual([0, 0, 0]);
+    });
+
+    it("supports custom comparator function", () => {
+      type User = { id: number; name: string };
+      const user = signal<User>(
+        { id: 1, name: "Alice" },
+        { equals: (prev, next) => prev.id === next.id },
+      );
+      const emissions: User[] = [];
+      user.subscribe((v) => emissions.push(v));
+
+      user({ id: 1, name: "Alice Updated" });
+      expect(emissions.length).toBe(1);
+
+      user({ id: 2, name: "Bob" });
+      expect(emissions.length).toBe(2);
+      expect(emissions[1].name).toBe("Bob");
+    });
+  });
 });
 
 describe("effect", () => {

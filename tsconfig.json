@@ -9,7 +9,6 @@
     "jsx": "react-jsx",
     "jsxImportSource": "reax",
 
-    /* Bundler mode */
     "moduleResolution": "bundler",
     "verbatimModuleSyntax": true,
     "moduleDetection": "force",
@@ -20,7 +19,6 @@
       "reax/jsx-dev-runtime": ["./lib/jsx-dev-runtime.ts"]
     },
 
-    /* Linting */
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "erasableSyntaxOnly": true,

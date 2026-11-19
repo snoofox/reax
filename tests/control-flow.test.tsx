@@ -84,7 +84,7 @@ describe("Control Flow Components", () => {
       expect(clicked).toBe(1);
 
       show(false);
-      expect(refNode).toBeNull(); // Callback ref called with null on unmount
+      expect(refNode).toBeNull();
       expect(container.querySelector("button")).toBeNull();
     });
   });
@@ -148,8 +148,8 @@ describe("Control Flow Components", () => {
       expect(spanB).toBeDefined();
 
       items(["A", "B", "C"]);
-      expect(container.querySelector("#A")).toBe(spanA); // Preserved DOM node
-      expect(container.querySelector("#B")).toBe(spanB); // Preserved DOM node
+      expect(container.querySelector("#A")).toBe(spanA);
+      expect(container.querySelector("#B")).toBe(spanB);
       expect(container.querySelector("#C")?.textContent).toBe("C");
 
       items(["B", "C"]);
@@ -178,6 +178,78 @@ describe("Control Flow Components", () => {
       items(["Second", "First"]);
       expect(container.querySelector("#Second")?.textContent).toBe("Second-0");
       expect(container.querySelector("#First")?.textContent).toBe("First-1");
+    });
+
+    describe("keyed by prop", () => {
+      it("preserves DOM nodes across immutable object updates using by function", () => {
+        type Todo = { id: number; title: string };
+        const todos = signal<Todo[]>([
+          { id: 1, title: "Task 1" },
+          { id: 2, title: "Task 2" },
+        ]);
+
+        render(
+          <ul>
+            <For each={todos} by={(t) => t.id}>
+              {(todo, index$) => (
+                <li id={`todo-${todo.id}`}>
+                  {todo.title} ({index$})
+                </li>
+              )}
+            </For>
+          </ul>,
+          container,
+        );
+
+        const node1 = container.querySelector("#todo-1")!;
+        const node2 = container.querySelector("#todo-2")!;
+        expect(node1).toBeDefined();
+        expect(node2).toBeDefined();
+
+        todos([
+          { id: 1, title: "Task 1" },
+          { id: 2, title: "Task 2" },
+          { id: 3, title: "Task 3" },
+        ]);
+
+        expect(container.querySelector("#todo-1")).toBe(node1);
+        expect(container.querySelector("#todo-2")).toBe(node2);
+        expect(container.querySelector("#todo-3")).toBeDefined();
+      });
+
+      it("supports string property name key with by='id'", () => {
+        type User = { id: string; name: string };
+        const users = signal<User[]>([
+          { id: "u1", name: "Alice" },
+          { id: "u2", name: "Bob" },
+        ]);
+
+        render(
+          <div>
+            <For each={users} by="id">
+              {(u, idx$) => (
+                <div id={u.id}>
+                  {u.name}-{idx$}
+                </div>
+              )}
+            </For>
+          </div>,
+          container,
+        );
+
+        const aliceNode = container.querySelector("#u1")!;
+        const bobNode = container.querySelector("#u2")!;
+
+        users([
+          { id: "u2", name: "Bob" },
+          { id: "u1", name: "Alice" },
+        ]);
+
+        expect(container.querySelector("#u1")).toBe(aliceNode);
+        expect(container.querySelector("#u2")).toBe(bobNode);
+        expect(aliceNode.textContent).toBe("Alice-1");
+        expect(bobNode.textContent).toBe("Bob-0");
+      });
     });
   });
 

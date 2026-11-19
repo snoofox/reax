@@ -16,10 +16,16 @@ export type StyleProp =
   | string
   | { [key: string]: Reactive<string | number | boolean | null | undefined> };
 
+export type ClassListProp = Record<
+  string,
+  boolean | undefined | null | Observable<boolean | undefined | null>
+>;
+
 export interface DOMAttributes<T = Element> {
   children?: Child;
   key?: unknown;
   ref?: Ref<T>;
+  classList?: Reactive<ClassListProp>;
   dangerouslySetInnerHTML?: { __html: unknown };
   innerHTML?: Reactive<string>;
 
@@ -371,7 +377,6 @@ export interface IntrinsicElements {
   image: SVGAttributes;
   foreignObject: SVGAttributes;
 
-  // MathML
   math: DOMAttributes;
   mi: DOMAttributes;
   mo: DOMAttributes;

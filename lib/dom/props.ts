@@ -245,6 +245,63 @@ export function applyAttributeOrProperty(
   el.setAttribute(key, String(val));
 }
 
+const prevClassListKeysMap = new WeakMap<Element, Set<string>>();
+
+export function applyClassList(
+  el: Element,
+  val: unknown,
+  teardowns?: (() => void)[],
+): void {
+  const prevClasses = prevClassListKeysMap.get(el);
+
+  if (val == null || typeof val !== "object") {
+    if (prevClasses) {
+      for (const name of prevClasses) {
+        el.classList.remove(name);
+      }
+      prevClassListKeysMap.delete(el);
+    }
+    return;
+  }
+
+  const currentClasses = new Set<string>();
+
+  for (const [cls, boolOrObs] of Object.entries(
+    val as Record<string, unknown>,
+  )) {
+    const classNames = cls.trim().split(/\s+/).filter(Boolean);
+    if (classNames.length === 0) continue;
+
+    for (const name of classNames) {
+      currentClasses.add(name);
+    }
+
+    if (isObservable(boolOrObs)) {
+      const sub = boolOrObs.subscribe((active) => {
+        const bool = Boolean(active);
+        for (const name of classNames) {
+          el.classList.toggle(name, bool);
+        }
+      });
+      if (teardowns) teardowns.push(() => sub.unsubscribe());
+    } else {
+      const bool = Boolean(boolOrObs);
+      for (const name of classNames) {
+        el.classList.toggle(name, bool);
+      }
+    }
+  }
+
+  if (prevClasses) {
+    for (const name of prevClasses) {
+      if (!currentClasses.has(name)) {
+        el.classList.remove(name);
+      }
+    }
+  }
+  prevClassListKeysMap.set(el, currentClasses);
+}
+
 export function setProp(
   el: Element,
   key: string,
@@ -255,6 +312,26 @@ export function setProp(
 
   if (key === "ref") {
     applyRef(el, val, teardowns);
+    return;
+  }
+
+  if (key === "classList") {
+    if (isObservable(val)) {
+      let currentTeardowns: (() => void)[] = [];
+      const sub = val.subscribe((nextObj) => {
+        currentTeardowns.forEach((fn) => fn());
+        currentTeardowns = [];
+        applyClassList(el, nextObj, currentTeardowns);
+      });
+      if (teardowns) {
+        teardowns.push(() => {
+          sub.unsubscribe();
+          currentTeardowns.forEach((fn) => fn());
+        });
+      }
+      return;
+    }
+    applyClassList(el, val, teardowns);
     return;
   }
 

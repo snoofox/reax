@@ -46,7 +46,7 @@ describe("Lifecycle Hooks", () => {
 
       count(1);
       count(2);
-      expect(mountCount).toBe(1); // Still 1, signals update fine-grained without re-running component
+      expect(mountCount).toBe(1);
     });
   });
 

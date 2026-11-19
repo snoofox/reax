@@ -4,8 +4,11 @@ import { flushMounts } from "../dom/render";
 
 export const ForTag = Symbol("For");
 
+export type KeyFn<T> = (item: T, index: number) => unknown;
+
 export type ForProps<T = unknown> = Props & {
   each: Observable<T[]>;
+  by?: KeyFn<T> | (T extends object ? keyof T : never) | string;
   fallback?: Child;
   children:
     | ((item: T, index: Observable<number>) => Child)
@@ -14,6 +17,7 @@ export type ForProps<T = unknown> = Props & {
 
 export function For<T>(props: {
   each: Observable<T[]>;
+  by?: KeyFn<T> | (T extends object ? keyof T : never) | string;
   fallback?: Child;
   children: (item: T, index: Observable<number>) => Child;
 }): VNode {
@@ -24,6 +28,18 @@ export function isForNode(
   vnode: VNode,
 ): vnode is VNode & { props: ForProps<unknown> } {
   return vnode.tag === ForTag;
+}
+
+function resolveKey<T>(
+  by: KeyFn<T> | string | undefined,
+  item: T,
+  index: number,
+): unknown {
+  if (typeof by === "function") return by(item, index);
+  if (typeof by === "string" && item != null && typeof item === "object") {
+    return (item as Record<string, unknown>)[by];
+  }
+  return item;
 }
 
 export function renderFor(
@@ -49,6 +65,7 @@ export function renderFor(
   const map = new Map<
     unknown,
     {
+      item: unknown;
       nodes: Node[];
       disposers: (() => void)[];
       index$: BehaviorSubject<number>;
@@ -89,16 +106,21 @@ export function renderFor(
 
     clearFallback();
 
-    for (const item of map.keys()) {
-      if (!arr.includes(item)) {
-        const cached = map.get(item);
+    const newKeys = new Set<unknown>();
+    for (let i = 0; i < arr.length; i++) {
+      newKeys.add(resolveKey(props.by as KeyFn<unknown>, arr[i], i));
+    }
+
+    for (const key of map.keys()) {
+      if (!newKeys.has(key)) {
+        const cached = map.get(key);
         if (!cached) continue;
         cached.disposers.forEach((fn) => fn());
         cached.nodes.forEach((node) => {
           if (node.parentNode) node.parentNode.removeChild(node);
         });
         cached.index$.complete();
-        map.delete(item);
+        map.delete(key);
       }
     }
 
@@ -106,8 +128,9 @@ export function renderFor(
 
     for (let i = arr.length - 1; i >= 0; i--) {
       const item = arr[i];
+      const key = resolveKey(props.by as KeyFn<unknown>, item, i);
 
-      if (!map.has(item)) {
+      if (!map.has(key)) {
         const fragment = document.createDocumentFragment();
         const itemDisposers: (() => void)[] = [];
         const index$ = new BehaviorSubject(i);
@@ -121,15 +144,15 @@ export function renderFor(
         const nodes = Array.from(fragment.childNodes);
 
         insertPoint.parentNode!.insertBefore(fragment, insertPoint);
-        map.set(item, { nodes, disposers: itemDisposers, index$ });
+        map.set(key, { item, nodes, disposers: itemDisposers, index$ });
 
         if (nodes.length > 0 && nodes[0]) {
           insertPoint = nodes[0];
         }
       } else {
-        const cached = map.get(item);
-
+        const cached = map.get(key);
         if (!cached) continue;
+        cached.item = item;
         cached.index$.next(i);
         cached.nodes.forEach((node: Node) =>
           insertPoint.parentNode!.insertBefore(node, insertPoint),

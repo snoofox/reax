@@ -43,7 +43,7 @@ describe("DOM Rendering", () => {
 
       count(1);
       expect(span.textContent).toBe("1");
-      expect(span.firstChild).toBe(textNode); // Identical text node updated in-place
+      expect(span.firstChild).toBe(textNode);
 
       count(42);
       expect(span.textContent).toBe("42");
@@ -80,6 +80,99 @@ describe("DOM Rendering", () => {
 
       cls("inactive");
       expect(div.getAttribute("class")).toBe("inactive");
+    });
+
+    describe("classList", () => {
+      it("applies static boolean classList entries", () => {
+        render(
+          <div classList={{ btn: true, active: true, hidden: false }} />,
+          container,
+        );
+
+        const div = container.querySelector("div")!;
+        expect(div.classList.contains("btn")).toBe(true);
+        expect(div.classList.contains("active")).toBe(true);
+        expect(div.classList.contains("hidden")).toBe(false);
+      });
+
+      it("reactively toggles classes when signals update", () => {
+        const isActive = signal(false);
+        const isError = signal(true);
+
+        render(
+          <button classList={{ active: isActive, "has-error": isError }}>
+            Action
+          </button>,
+          container,
+        );
+
+        const btn = container.querySelector("button")!;
+        expect(btn.classList.contains("active")).toBe(false);
+        expect(btn.classList.contains("has-error")).toBe(true);
+
+        isActive(true);
+        expect(btn.classList.contains("active")).toBe(true);
+
+        isError(false);
+        expect(btn.classList.contains("has-error")).toBe(false);
+      });
+
+      it("handles space-separated class tokens in keys", () => {
+        const on = signal(true);
+        render(
+          <div classList={{ "font-bold text-center px-4": on }} />,
+          container,
+        );
+
+        const div = container.querySelector("div")!;
+        expect(div.classList.contains("font-bold")).toBe(true);
+        expect(div.classList.contains("text-center")).toBe(true);
+        expect(div.classList.contains("px-4")).toBe(true);
+
+        on(false);
+        expect(div.classList.contains("font-bold")).toBe(false);
+        expect(div.classList.contains("text-center")).toBe(false);
+        expect(div.classList.contains("px-4")).toBe(false);
+      });
+
+      it("coexists cleanly with standard class attribute", () => {
+        const active = signal(false);
+        render(
+          <div class="base-container" classList={{ active: active }} />,
+          container,
+        );
+
+        const div = container.querySelector("div")!;
+        expect(div.classList.contains("base-container")).toBe(true);
+        expect(div.classList.contains("active")).toBe(false);
+
+        active(true);
+        expect(div.classList.contains("base-container")).toBe(true);
+        expect(div.classList.contains("active")).toBe(true);
+
+        active(false);
+        expect(div.classList.contains("base-container")).toBe(true);
+        expect(div.classList.contains("active")).toBe(false);
+      });
+
+      it("supports a fully observable classList object", () => {
+        const classes = signal<Record<string, boolean>>({
+          theme: true,
+          dark: false,
+        });
+
+        render(<div classList={classes} />, container);
+        const div = container.querySelector("div")!;
+        expect(div.classList.contains("theme")).toBe(true);
+        expect(div.classList.contains("dark")).toBe(false);
+
+        classes({ theme: true, dark: true });
+        expect(div.classList.contains("dark")).toBe(true);
+
+        classes({ theme: false, dark: true });
+        expect(div.classList.contains("theme")).toBe(false);
+        expect(div.classList.contains("dark")).toBe(true);
+      });
     });
 
     it("handles boolean attributes properly", () => {
