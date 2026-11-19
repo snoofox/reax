@@ -1,5 +1,6 @@
 import { isObservable, Observable, BehaviorSubject } from "rxjs";
-import type { Child, VNode, Props } from "../types.ts";
+import type { Child, VNode, Props } from "../types";
+import { flushMounts } from "../dom/render";
 
 export const ForTag = Symbol("For");
 
@@ -138,6 +139,7 @@ export function renderFor(
         }
       }
     }
+    flushMounts();
   });
 
   if (teardowns) {

@@ -1,26 +1,27 @@
 import { isObservable } from "rxjs";
-import type { Child } from "../types.ts";
-import { Fragment } from "../jsx-runtime.ts";
+import type { Child } from "../types";
+import { Fragment } from "../jsx-runtime";
 import {
   SVG_NS,
   MATHML_NS,
   createElementWithNS,
   setProp,
-} from "./props.ts";
-import { isShowNode, renderShow } from "../components/show.ts";
-import { isForNode, renderFor } from "../components/for.ts";
-import { isSwitchNode, renderSwitch } from "../components/switch.ts";
+} from "./props";
+import { isShowNode, renderShow } from "../components/show";
+import { isForNode, renderFor } from "../components/for";
+import { isSwitchNode, renderSwitch } from "../components/switch";
 
 let _mounts: (() => void)[] = [];
 let _unmounts: (() => void)[] | null = null;
-let _depth = 0;
 
 export function onMount(fn: () => void): void {
-  if (_depth === 0) {
-    console.warn("[reax] onMount called outside a component. Ignoring.");
-    return;
-  }
   _mounts.push(fn);
+}
+
+export function flushMounts(): void {
+  if (_mounts.length === 0) return;
+  const fns = _mounts.splice(0);
+  for (const fn of fns) fn();
 }
 
 export function onUnmount(fn: () => void): void {
@@ -145,21 +146,6 @@ export function render(
   vnode: Child,
   container: Element | DocumentFragment | Node,
 ): void {
-  const isRoot = _depth === 0;
-  _depth++;
-
-  try {
-    _render(vnode, container);
-  } finally {
-    _depth--;
-  }
-
-  if (isRoot) {
-    const mounts = _mounts.splice(0);
-    if (mounts.length > 0) {
-      queueMicrotask(() => {
-        for (const fn of mounts) fn();
-      });
-    }
-  }
+  _render(vnode, container);
+  flushMounts();
 }

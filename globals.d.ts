@@ -1,5 +1,5 @@
-import type { VNode, Child } from "./lib/types.ts";
-import type { IntrinsicElements as ReaxIntrinsicElements } from "./lib/jsx-types.ts";
+import type { VNode, Child } from "./lib/types";
+import type { IntrinsicElements as ReaxIntrinsicElements } from "./lib/jsx-types";
 
 declare global {
   namespace JSX {

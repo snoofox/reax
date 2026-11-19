@@ -1,5 +1,6 @@
 import { isObservable, Observable } from "rxjs";
-import type { Child, VNode, Props } from "../types.ts";
+import type { Child, VNode, Props } from "../types";
+import { flushMounts } from "../dom/render";
 
 export const ShowTag = Symbol("Show");
 
@@ -66,6 +67,7 @@ export function renderShow(
     }
 
     endAnchor.parentNode!.insertBefore(fragment, endAnchor);
+    flushMounts();
   });
 
   if (teardowns) {

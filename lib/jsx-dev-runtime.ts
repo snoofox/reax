@@ -1,6 +1,6 @@
-import { Fragment } from "./jsx-runtime.ts";
-import type { Tag, VNode, Child } from "./types.ts";
-import type { IntrinsicElements } from "./jsx-types.ts";
+import { Fragment } from "./jsx-runtime";
+import type { Tag, VNode, Child } from "./types";
+import type { IntrinsicElements } from "./jsx-types";
 
 export { Fragment };
 export type { IntrinsicElements };
@@ -34,5 +34,5 @@ export namespace JSX {
   export interface ElementChildrenAttribute {
     children: {};
   }
-  export type IntrinsicElements = import("./jsx-types.ts").IntrinsicElements;
+  export type IntrinsicElements = import("./jsx-types").IntrinsicElements;
 }

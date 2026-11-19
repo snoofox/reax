@@ -1,5 +1,5 @@
 import type { Observable } from "rxjs";
-import type { Child } from "./types.ts";
+import type { Child } from "./types";
 
 export type Reactive<T> = T | Observable<T>;
 
@@ -369,4 +369,16 @@ export interface IntrinsicElements {
   mask: SVGAttributes;
   pattern: SVGAttributes;
   image: SVGAttributes;
+  foreignObject: SVGAttributes;
+
+  // MathML
+  math: DOMAttributes;
+  mi: DOMAttributes;
+  mo: DOMAttributes;
+  mn: DOMAttributes;
+  ms: DOMAttributes;
+  mrow: DOMAttributes;
+  mfrac: DOMAttributes;
+  msqrt: DOMAttributes;
+  mroot: DOMAttributes;
 }

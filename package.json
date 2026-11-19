@@ -1,16 +1,42 @@
 {
   "name": "reax",
-  "private": true,
-  "version": "0.0.0",
+  "version": "0.1.0",
+  "description": "Fine-grained reactive UI library powered directly by RxJS",
   "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./jsx-runtime": {
+      "types": "./dist/jsx-runtime.d.ts",
+      "import": "./dist/jsx-runtime.js"
+    },
+    "./jsx-dev-runtime": {
+      "types": "./dist/jsx-dev-runtime.d.ts",
+      "import": "./dist/jsx-dev-runtime.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
   "scripts": {
-    "dev": "vite",
-    "build": "tsc && vite build",
-    "preview": "vite preview"
+    "build": "tsc -p tsconfig.build.json && vite build",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
+    "@types/node": "^26.6.6",
+    "happy-dom": "^21.0.4",
     "typescript": "~6.0.2",
-    "vite": "^8.1.1"
+    "vite": "^8.1.1",
+    "vitest": "^5.1.1"
+  },
+  "peerDependencies": {
+    "rxjs": "^7.8.0"
   },
   "dependencies": {
     "rxjs": "^7.8.2"

@@ -1,5 +1,6 @@
 import { combineLatest, Observable, isObservable } from "rxjs";
-import type { Child, VNode, Props } from "../types.ts";
+import type { Child, VNode, Props } from "../types";
+import { flushMounts } from "../dom/render";
 
 export const SwitchTag = Symbol("Switch");
 export const MatchTag = Symbol("Match");
@@ -120,6 +121,7 @@ export function renderSwitch(
     const nodes = Array.from(fragment.childNodes);
     endAnchor.parentNode!.insertBefore(fragment, endAnchor);
     map.set(index, { nodes, disposers });
+    flushMounts();
   });
 
   if (teardowns) {
