@@ -29,7 +29,9 @@ export function renderShow(
     container: Element | DocumentFragment | Node,
     teardowns?: (() => void)[],
     ns?: string,
+    errorHandler?: ((err: unknown) => void) | null,
   ) => void,
+  errorHandler?: ((err: unknown) => void) | null,
 ): void {
   if (!isObservable(vnode.props.when)) return;
 
@@ -61,9 +63,21 @@ export function renderShow(
     const fragment = document.createDocumentFragment();
 
     if (nextBranch) {
-      renderChild(vnode.props.children as Child, fragment, disposers, effectiveNs);
+      renderChild(
+        vnode.props.children as Child,
+        fragment,
+        disposers,
+        effectiveNs,
+        errorHandler,
+      );
     } else if (vnode.props.fallback !== undefined) {
-      renderChild(vnode.props.fallback, fragment, disposers, effectiveNs);
+      renderChild(
+        vnode.props.fallback,
+        fragment,
+        disposers,
+        effectiveNs,
+        errorHandler,
+      );
     }
 
     endAnchor.parentNode!.insertBefore(fragment, endAnchor);

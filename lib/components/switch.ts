@@ -43,7 +43,9 @@ export function renderSwitch(
     container: Element | DocumentFragment | Node,
     teardowns?: (() => void)[],
     ns?: string,
+    errorHandler?: ((err: unknown) => void) | null,
   ) => void,
+  errorHandler?: ((err: unknown) => void) | null,
 ): void {
   const rawChildren = vnode.props.children;
   const child = Array.isArray(rawChildren)
@@ -112,10 +114,17 @@ export function renderSwitch(
           fragment,
           disposers,
           effectiveNs,
+          errorHandler,
         );
       }
     } else if (vnode.props.fallback !== undefined) {
-      renderChild(vnode.props.fallback, fragment, disposers, effectiveNs);
+      renderChild(
+        vnode.props.fallback,
+        fragment,
+        disposers,
+        effectiveNs,
+        errorHandler,
+      );
     }
 
     const nodes = Array.from(fragment.childNodes);

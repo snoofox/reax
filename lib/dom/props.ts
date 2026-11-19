@@ -307,6 +307,7 @@ export function setProp(
   key: string,
   val: unknown,
   teardowns?: (() => void)[],
+  onError?: ((err: unknown) => void) | null,
 ): void {
   if (key === "children" || key === "__self" || key === "__source") return;
 
@@ -366,8 +367,14 @@ export function setProp(
   }
 
   if (isObservable(val)) {
-    const sub = val.subscribe((next) => {
-      applyAttributeOrProperty(el, key, next, teardowns);
+    const sub = val.subscribe({
+      next: (next) => {
+        applyAttributeOrProperty(el, key, next, teardowns);
+      },
+      error: (err) => {
+        if (onError) onError(err);
+        else console.error(`[reax] Unhandled observable error in prop "${key}":`, err);
+      },
     });
     if (teardowns) teardowns.push(() => sub.unsubscribe());
     return;

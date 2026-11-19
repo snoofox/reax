@@ -1,5 +1,15 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { render, signal, Show, For, Switch, Match, map } from "reax";
+import {
+  render,
+  signal,
+  Show,
+  For,
+  Switch,
+  Match,
+  ErrorBoundary,
+  map,
+  Subject,
+} from "reax";
 
 describe("Control Flow Components", () => {
   let container: HTMLDivElement;
@@ -309,6 +319,126 @@ describe("Control Flow Components", () => {
       showB(true);
       expect(container.querySelector("#fallback")).toBeNull();
       expect(container.querySelector("#b")?.textContent).toBe("B");
+    });
+  });
+
+  describe("<ErrorBoundary>", () => {
+    it("renders children normally when no error occurs", () => {
+      render(
+        <ErrorBoundary fallback={<div>Failed</div>}>
+          <div id="content">Safe content</div>
+        </ErrorBoundary>,
+        container,
+      );
+
+      expect(container.querySelector("#content")?.textContent).toBe(
+        "Safe content",
+      );
+      expect(container.textContent).not.toContain("Failed");
+    });
+
+    it("catches synchronous component render errors and displays fallback", () => {
+      const Broken = () => {
+        throw new Error("Explosion in component");
+      };
+
+      render(
+        <ErrorBoundary
+          fallback={(err) => (
+            <div id="fallback">Caught: {(err as Error).message}</div>
+          )}
+        >
+          <Broken />
+        </ErrorBoundary>,
+        container,
+      );
+
+      expect(container.querySelector("#fallback")?.textContent).toBe(
+        "Caught: Explosion in component",
+      );
+    });
+
+    it("supports static Child fallback element", () => {
+      const Broken = () => {
+        throw new Error("Fail");
+      };
+
+      render(
+        <ErrorBoundary fallback={<div id="static-fallback">Error!</div>}>
+          <Broken />
+        </ErrorBoundary>,
+        container,
+      );
+
+      expect(container.querySelector("#static-fallback")?.textContent).toBe(
+        "Error!",
+      );
+    });
+
+    it("recovers and re-renders children when reset() is called", () => {
+      const shouldFail = signal(true);
+
+      const Flaky = () => {
+        if (shouldFail()) {
+          throw new Error("Temporary crash");
+        }
+        return <div id="flaky-content">Recovered!</div>;
+      };
+
+      render(
+        <ErrorBoundary
+          fallback={(err, reset) => (
+            <div id="fallback">
+              <span>{(err as Error).message}</span>
+              <button id="retry-btn" onClick={reset}>
+                Retry
+              </button>
+            </div>
+          )}
+        >
+          <Flaky />
+        </ErrorBoundary>,
+        container,
+      );
+
+      expect(container.querySelector("#fallback")?.textContent).toContain(
+        "Temporary crash",
+      );
+      expect(container.querySelector("#flaky-content")).toBeNull();
+
+      shouldFail(false);
+      container.querySelector<HTMLButtonElement>("#retry-btn")!.click();
+
+      expect(container.querySelector("#fallback")).toBeNull();
+      expect(container.querySelector("#flaky-content")?.textContent).toBe(
+        "Recovered!",
+      );
+    });
+
+    it("catches errors emitted by child observables", () => {
+      const stream$ = new Subject<string>();
+
+      render(
+        <ErrorBoundary
+          fallback={(err) => (
+            <div id="stream-fallback">{(err as Error).message}</div>
+          )}
+        >
+          <div id="stream-child">{stream$}</div>
+        </ErrorBoundary>,
+        container,
+      );
+
+      stream$.next("hello");
+      expect(container.querySelector("#stream-child")?.textContent).toBe(
+        "hello",
+      );
+
+      stream$.error(new Error("Stream disconnected"));
+      expect(container.querySelector("#stream-child")).toBeNull();
+      expect(container.querySelector("#stream-fallback")?.textContent).toBe(
+        "Stream disconnected",
+      );
     });
   });
 });

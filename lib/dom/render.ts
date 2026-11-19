@@ -10,6 +10,10 @@ import {
 import { isShowNode, renderShow } from "../components/show";
 import { isForNode, renderFor } from "../components/for";
 import { isSwitchNode, renderSwitch } from "../components/switch";
+import {
+  isErrorBoundaryNode,
+  renderErrorBoundary,
+} from "../components/error-boundary";
 
 let _mounts: (() => void)[] = [];
 let _unmounts: (() => void)[] | null = null;
@@ -44,6 +48,7 @@ export function _render(
   container: Element | DocumentFragment | Node,
   teardowns?: (() => void)[],
   currentNs?: string,
+  errorHandler?: ((err: unknown) => void) | null,
 ): void {
   if (vnode == null || typeof vnode === "boolean") return;
 
@@ -62,14 +67,20 @@ export function _render(
 
   if (Array.isArray(vnode)) {
     for (const child of vnode) {
-      _render(child, container, teardowns, effectiveNs);
+      _render(child, container, teardowns, effectiveNs, errorHandler);
     }
     return;
   }
 
   if (isObservable(vnode)) {
     const node = document.createTextNode("");
-    const sub = vnode.subscribe((next) => (node.nodeValue = formatText(next)));
+    const sub = vnode.subscribe({
+      next: (next) => (node.nodeValue = formatText(next)),
+      error: (err) => {
+        if (errorHandler) errorHandler(err);
+        else console.error("[reax] Unhandled observable error:", err);
+      },
+    });
     if (teardowns) teardowns.push(() => sub.unsubscribe());
     container.appendChild(node);
     return;
@@ -85,23 +96,35 @@ export function _render(
       ? vnode.props.children
       : [vnode.props.children];
     for (const child of children) {
-      _render(child, container, teardowns, effectiveNs);
+      _render(child, container, teardowns, effectiveNs, errorHandler);
     }
     return;
   }
 
   if (isShowNode(vnode)) {
-    renderShow(vnode, container, teardowns, effectiveNs, _render);
+    renderShow(vnode, container, teardowns, effectiveNs, _render, errorHandler);
     return;
   }
 
   if (isForNode(vnode)) {
-    renderFor(vnode, container, teardowns, effectiveNs, _render);
+    renderFor(vnode, container, teardowns, effectiveNs, _render, errorHandler);
     return;
   }
 
   if (isSwitchNode(vnode)) {
-    renderSwitch(vnode, container, teardowns, effectiveNs, _render);
+    renderSwitch(vnode, container, teardowns, effectiveNs, _render, errorHandler);
+    return;
+  }
+
+  if (isErrorBoundaryNode(vnode)) {
+    renderErrorBoundary(
+      vnode,
+      container,
+      teardowns,
+      effectiveNs,
+      _render,
+      errorHandler,
+    );
     return;
   }
 
@@ -109,7 +132,14 @@ export function _render(
     const prev = _unmounts;
     _unmounts = teardowns ?? null;
     try {
-      _render(vnode.tag(vnode.props), container, teardowns, effectiveNs);
+      const child = vnode.tag(vnode.props);
+      _render(child, container, teardowns, effectiveNs, errorHandler);
+    } catch (err) {
+      if (errorHandler) {
+        errorHandler(err);
+        return;
+      }
+      throw err;
     } finally {
       _unmounts = prev;
     }
@@ -119,7 +149,7 @@ export function _render(
   if (typeof vnode.tag !== "string") return;
   const el = createElementWithNS(vnode.tag, effectiveNs);
   for (const [key, val] of Object.entries(vnode.props ?? {})) {
-    setProp(el, key, val, teardowns);
+    setProp(el, key, val, teardowns, errorHandler);
   }
 
   const childNs =
@@ -136,7 +166,7 @@ export function _render(
     : [vnode.props.children];
 
   for (const child of children) {
-    _render(child, el, teardowns, childNs);
+    _render(child, el, teardowns, childNs, errorHandler);
   }
 
   container.appendChild(el);

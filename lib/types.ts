@@ -4,6 +4,7 @@ export type {
   ReadonlySignal,
   SignalOptions,
 } from "./reactivity/signal";
+export type { ErrorBoundaryProps } from "./components/error-boundary";
 
 export type Props = {
   children?: unknown;

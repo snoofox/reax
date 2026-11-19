@@ -3,6 +3,10 @@ export { Show } from "./components/show";
 export { For, type KeyFn } from "./components/for";
 export { Switch, Match } from "./components/switch";
 export {
+  ErrorBoundary,
+  type ErrorBoundaryProps,
+} from "./components/error-boundary";
+export {
   signal,
   type Signal,
   type ReadonlySignal,

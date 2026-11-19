@@ -52,7 +52,9 @@ export function renderFor(
     container: Element | DocumentFragment | Node,
     teardowns?: (() => void)[],
     ns?: string,
+    errorHandler?: ((err: unknown) => void) | null,
   ) => void,
+  errorHandler?: ((err: unknown) => void) | null,
 ): void {
   const props = vnode.props;
   if (!isObservable(props.each)) return;
@@ -97,7 +99,13 @@ export function renderFor(
 
       if (props.fallback !== undefined && fallbackNodes.length === 0) {
         const fragment = document.createDocumentFragment();
-        renderChild(props.fallback, fragment, fallbackDisposers, effectiveNs);
+        renderChild(
+          props.fallback,
+          fragment,
+          fallbackDisposers,
+          effectiveNs,
+          errorHandler,
+        );
         fallbackNodes = Array.from(fragment.childNodes);
         endAnchor.parentNode!.insertBefore(fragment, endAnchor);
       }
@@ -139,7 +147,13 @@ export function renderFor(
           : props.children;
         if (typeof childFn !== "function") continue;
         const childVNode = childFn(item, index$.asObservable());
-        renderChild(childVNode, fragment, itemDisposers, effectiveNs);
+        renderChild(
+          childVNode,
+          fragment,
+          itemDisposers,
+          effectiveNs,
+          errorHandler,
+        );
 
         const nodes = Array.from(fragment.childNodes);
 
