@@ -7,7 +7,7 @@
     "allowArbitraryExtensions": true,
     "skipLibCheck": true,
     "jsx": "react-jsx",
-    "jsxImportSource": "reax",
+    "jsxImportSource": "reaxjs",
 
     "moduleResolution": "bundler",
     "verbatimModuleSyntax": true,
@@ -16,7 +16,10 @@
     "paths": {
       "reax": ["./lib/index.ts"],
       "reax/jsx-runtime": ["./lib/jsx-runtime.ts"],
-      "reax/jsx-dev-runtime": ["./lib/jsx-dev-runtime.ts"]
+      "reax/jsx-dev-runtime": ["./lib/jsx-dev-runtime.ts"],
+      "reaxjs": ["./lib/index.ts"],
+      "reaxjs/jsx-runtime": ["./lib/jsx-runtime.ts"],
+      "reaxjs/jsx-dev-runtime": ["./lib/jsx-dev-runtime.ts"]
     },
 
     "noUnusedLocals": true,

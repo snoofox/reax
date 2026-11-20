@@ -1,7 +1,7 @@
 {
-  "name": "reax",
+  "name": "reaxjs",
   "version": "0.1.0",
-  "description": "Fine-grained reactive UI library powered directly by RxJS",
+  "description": "A fine-grained reactive UI library powered by RxJS.",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
