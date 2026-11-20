@@ -145,6 +145,10 @@ const fullName = computed(() => `${first()} ${last()}`);
 
 Dependencies are tracked dynamically. If conditional logic branches, `computed` unsubscribes from inactive dependencies to prevent unnecessary computations and memory leaks.
 
+The `computed(source, fn)` and `computed(sources, fn)` overloads start with `undefined` until the source emits, so their result is typed `T | undefined`. Use the getter form (`computed(() => ...)`) when you need a value synchronously.
+
+Prefer `computed` over `signal.pipe(...)` for derived state in JSX. A `computed` remains callable, tracks dependencies, and shares signal equality semantics, whereas a piped result is only a raw stream. Values suffixed with `$` denote raw streams; RxJS operators are available for interop, not for component-local derivations.
+
 ### Control Flow Components
 
 - **`<Show when={condition} fallback={...}>`**: Conditionally renders children or a fallback branch based on an Observable or static condition.

@@ -343,4 +343,18 @@ describe("DOM Rendering", () => {
       expect(mi.namespaceURI).toBe("http://www.w3.org/1998/Math/MathML");
     });
   });
+
+  describe("Form controls", () => {
+    it("applies an initial value to a select after its options exist", () => {
+      render(
+        <select value="b">
+          <option value="a">A</option>
+          <option value="b">B</option>
+        </select>,
+        container,
+      );
+
+      expect(container.querySelector("select")!.value).toBe("b");
+    });
+  });
 });

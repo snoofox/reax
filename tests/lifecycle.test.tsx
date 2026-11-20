@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { render, signal, onMount, onUnmount, Show } from "reax";
+import { render, signal, computed, onMount, onUnmount, Show } from "reax";
 
 describe("Lifecycle Hooks", () => {
   let container: HTMLDivElement;
@@ -96,6 +96,83 @@ describe("Lifecycle Hooks", () => {
       );
 
       warnSpy.mockRestore();
+    });
+  });
+
+  describe("onMount cleanup", () => {
+    it("runs the returned teardown when a dynamic scope unmounts its branch", () => {
+      const isVisible = signal(true);
+      let cleaned = 0;
+
+      const Child = () => {
+        onMount(() => () => {
+          cleaned++;
+        });
+        return <div>Child</div>;
+      };
+
+      render(
+        <Show when={isVisible}>
+          <Child />
+        </Show>,
+        container,
+      );
+
+      expect(cleaned).toBe(0);
+
+      isVisible(false);
+      expect(cleaned).toBe(1);
+
+      isVisible(true);
+      isVisible(false);
+      expect(cleaned).toBe(2);
+    });
+
+    it("does not throw when a root-level onMount returns a teardown", () => {
+      let mounted = 0;
+
+      const Root = () => {
+        onMount(() => {
+          mounted++;
+          return () => {};
+        });
+        return <div>Root</div>;
+      };
+
+      expect(() => render(<Root />, container)).not.toThrow();
+      expect(mounted).toBe(1);
+    });
+  });
+
+  describe("computed disposal", () => {
+    it("stops recomputing after its dynamic scope unmounts", () => {
+      const isVisible = signal(true);
+      const count = signal(0);
+      let evaluations = 0;
+
+      const Child = () => {
+        const doubled = computed(() => {
+          evaluations++;
+          return count() * 2;
+        });
+        return <div>{doubled}</div>;
+      };
+
+      render(
+        <Show when={isVisible}>
+          <Child />
+        </Show>,
+        container,
+      );
+
+      expect(evaluations).toBe(1);
+
+      count(1);
+      expect(evaluations).toBe(2);
+
+      isVisible(false);
+      count(2);
+      expect(evaluations).toBe(2);
     });
   });
 });

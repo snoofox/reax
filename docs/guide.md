@@ -114,6 +114,20 @@ const double = computed(count, (c) => c * 2);
 const greeting = computed([first, last], ([f, l]) => `Hello, ${f} ${l}!`);
 ```
 
+When the source is asynchronous (for example an HTTP stream), the computed starts as `undefined` until the first emission, so it is typed `T | undefined`. Use the getter form (`computed(() => ...)`) when you need a value synchronously.
+
+When deriving state for JSX, reach for `computed` rather than piping signals with RxJS operators. A `computed` stays callable, tracks dependencies, and uses the same equality semantics as other signals, while a `signal.pipe(map(...))` result is only a raw stream:
+
+```tsx
+// Prefer this:
+const copyLabel = computed(() => (copied() ? "Copied" : "Copy"));
+
+// Over this:
+const copyLabel$ = copied.pipe(map((c) => (c ? "Copied" : "Copy")));
+```
+
+The `$` suffix indicates a raw stream. RxJS operators remain available for interop, but are not needed for component-local derived state.
+
 ---
 
 ## 2. Component Props
@@ -300,7 +314,7 @@ function View() {
 
 ### `<ErrorBoundary>`
 
-Catches both synchronous component exceptions and asynchronous stream errors:
+Catches both synchronous component exceptions and asynchronous errors from bound streams, `computed` signals, and control-flow conditions:
 
 ```tsx
 import { ErrorBoundary } from "@snoofox/reax";
@@ -448,6 +462,8 @@ onMount(() => {
 });
 ```
 
+The returned teardown runs when the enclosing dynamic scope (`<Show>`, `<For>`, `<Switch>`) unmounts its branch. Root components never unmount, so a cleanup returned from a root-level `onMount` is discarded.
+
 ### `onUnmount`
 
 Runs when the component is removed from the DOM:
@@ -459,6 +475,8 @@ onUnmount(() => {
   console.log("Component unmounted");
 });
 ```
+
+`onUnmount` only fires inside a dynamic reactive scope (`<Show>`, `<For>`, `<Switch>`). At the root, Reax warns and ignores the callback because the root never unmounts.
 
 ---
 

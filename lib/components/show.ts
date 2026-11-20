@@ -1,11 +1,12 @@
-import { isObservable, Observable } from "rxjs";
-import type { Child, VNode, Props } from "../types";
+import { isObservable, of, Observable } from "rxjs";
+import type { Child, VNode, Props, RenderChild } from "../types";
 import { flushMounts } from "../dom/render";
+import { clearBetween, runCleanups } from "../dom/utils";
 
 export const ShowTag = Symbol("Show");
 
 export type ShowProps = Props & {
-  when: Observable<boolean>;
+  when: Observable<boolean> | boolean;
   fallback?: Child;
 };
 
@@ -24,18 +25,13 @@ export function renderShow(
   container: Element | DocumentFragment | Node,
   teardowns: (() => void)[] | undefined,
   effectiveNs: string | undefined,
-  renderChild: (
-    child: Child,
-    container: Element | DocumentFragment | Node,
-    teardowns?: (() => void)[],
-    ns?: string,
-    errorHandler?: ((err: unknown) => void) | null,
-    context?: Map<symbol, unknown>,
-  ) => void,
+  renderChild: RenderChild,
   errorHandler?: ((err: unknown) => void) | null,
   context?: Map<symbol, unknown>,
 ): void {
-  if (!isObservable(vnode.props.when)) return;
+  const when = isObservable(vnode.props.when)
+    ? vnode.props.when
+    : of(vnode.props.when);
 
   const startAnchor = document.createComment("show-start");
   const endAnchor = document.createComment("show-end");
@@ -45,61 +41,52 @@ export function renderShow(
   let currentBranch: boolean | null = null;
   let disposers: (() => void)[] = [];
 
-  const sub = vnode.props.when.subscribe((next) => {
-    const nextBranch = Boolean(next);
-    if (currentBranch === nextBranch) return;
-    currentBranch = nextBranch;
+  const sub = when.subscribe({
+    next: (next) => {
+      const nextBranch = Boolean(next);
+      if (currentBranch === nextBranch) return;
+      currentBranch = nextBranch;
 
-    disposers.forEach((fn) => fn());
-    disposers = [];
+      runCleanups(disposers);
+      disposers = [];
+      clearBetween(startAnchor, endAnchor);
 
-    if (startAnchor.parentNode) {
-      while (
-        startAnchor.nextSibling &&
-        startAnchor.nextSibling !== endAnchor
-      ) {
-        startAnchor.parentNode.removeChild(startAnchor.nextSibling);
+      const fragment = document.createDocumentFragment();
+
+      if (nextBranch) {
+        renderChild(
+          vnode.props.children as Child,
+          fragment,
+          disposers,
+          effectiveNs,
+          errorHandler,
+          context,
+        );
+      } else if (vnode.props.fallback !== undefined) {
+        renderChild(
+          vnode.props.fallback,
+          fragment,
+          disposers,
+          effectiveNs,
+          errorHandler,
+          context,
+        );
       }
-    }
 
-    const fragment = document.createDocumentFragment();
-
-    if (nextBranch) {
-      renderChild(
-        vnode.props.children as Child,
-        fragment,
-        disposers,
-        effectiveNs,
-        errorHandler,
-        context,
-      );
-    } else if (vnode.props.fallback !== undefined) {
-      renderChild(
-        vnode.props.fallback,
-        fragment,
-        disposers,
-        effectiveNs,
-        errorHandler,
-        context,
-      );
-    }
-
-    endAnchor.parentNode!.insertBefore(fragment, endAnchor);
-    flushMounts();
+      endAnchor.parentNode!.insertBefore(fragment, endAnchor);
+      flushMounts();
+    },
+    error: (err) => {
+      if (errorHandler) errorHandler(err);
+      else console.error("[reax] Unhandled observable error in <Show>:", err);
+    },
   });
 
   if (teardowns) {
     teardowns.push(() => {
       sub.unsubscribe();
-      disposers.forEach((fn) => fn());
-      if (startAnchor.parentNode) {
-        while (
-          startAnchor.nextSibling &&
-          startAnchor.nextSibling !== endAnchor
-        ) {
-          startAnchor.parentNode.removeChild(startAnchor.nextSibling);
-        }
-      }
+      runCleanups(disposers);
+      clearBetween(startAnchor, endAnchor);
     });
   }
 }

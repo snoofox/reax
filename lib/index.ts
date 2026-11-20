@@ -1,7 +1,12 @@
 export { render, onMount, onUnmount } from "./dom/render";
-export { Show } from "./components/show";
-export { For, type KeyFn } from "./components/for";
-export { Switch, Match } from "./components/switch";
+export { Show, type ShowProps } from "./components/show";
+export { For, type ForProps, type KeyFn } from "./components/for";
+export {
+  Switch,
+  Match,
+  type SwitchProps,
+  type MatchProps,
+} from "./components/switch";
 export {
   ErrorBoundary,
   type ErrorBoundaryProps,

@@ -1,4 +1,4 @@
-import { signal, map } from "@snoofox/reax";
+import { signal, computed } from "@snoofox/reax";
 import Prism from "prismjs";
 import "prismjs/components/prism-typescript";
 import "prismjs/components/prism-jsx";
@@ -13,7 +13,7 @@ interface CodeBlockProps {
 
 export function CodeBlock({ code, language = "tsx", title }: CodeBlockProps) {
   const copied = signal(false);
-  const copyLabel$ = copied.pipe(map((c) => (c ? "Copied" : "Copy")));
+  const copyLabel = computed(() => (copied() ? "Copied" : "Copy"));
 
   const grammar = Prism.languages[language] || Prism.languages.tsx || Prism.languages.javascript;
   const highlighted = Prism.highlight(code.trim(), grammar, language);
@@ -30,7 +30,7 @@ export function CodeBlock({ code, language = "tsx", title }: CodeBlockProps) {
       <div class="code-frame-header">
         <span class="code-frame-title">{title || language}</span>
         <button onClick={handleCopy} class="code-copy-btn">
-          {copyLabel$}
+          {copyLabel}
         </button>
       </div>
       <pre class="code-frame-pre">

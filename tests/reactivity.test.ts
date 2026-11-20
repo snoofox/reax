@@ -5,6 +5,7 @@ import {
   map,
   combineLatest,
   isObservable,
+  Subject,
 } from "reax";
 
 describe("signal", () => {
@@ -191,6 +192,15 @@ describe("computed", () => {
     expect(sum()).toBe(13);
     b(20);
     expect(sum()).toBe(30);
+  });
+
+  it("starts as undefined for a source that has not emitted yet", () => {
+    const source = new Subject<number>();
+    const doubled = computed(source, (n) => n * 2);
+
+    expect(doubled()).toBeUndefined();
+    source.next(21);
+    expect(doubled()).toBe(42);
   });
 
   it("deduplicates emissions when derived output does not change", () => {

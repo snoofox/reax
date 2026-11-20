@@ -19,28 +19,49 @@ import {
   getActiveContext,
   setActiveContext,
 } from "../context";
+import {
+  getActiveCleanups,
+  setActiveCleanups,
+  getActiveErrorHandler,
+  setActiveErrorHandler,
+  type Cleanup,
+} from "../reactivity/scope";
 
-let _mounts: (() => void)[] = [];
-let _unmounts: (() => void)[] | null = null;
+type MountEntry = {
+  fn: () => void | Cleanup;
+  cleanups: Cleanup[] | null;
+};
 
-export function onMount(fn: () => void): void {
-  _mounts.push(fn);
+let _mounts: MountEntry[] = [];
+
+export function onMount(fn: () => void | Cleanup): void {
+  _mounts.push({ fn, cleanups: getActiveCleanups() });
 }
 
 export function flushMounts(): void {
   if (_mounts.length === 0) return;
-  const fns = _mounts.splice(0);
-  for (const fn of fns) fn();
+  const entries = _mounts.splice(0);
+  for (const { fn, cleanups } of entries) {
+    try {
+      const cleanup = fn();
+      if (typeof cleanup === "function" && cleanups) {
+        cleanups.push(cleanup);
+      }
+    } catch (err) {
+      console.error("[reax] onMount error:", err);
+    }
+  }
 }
 
-export function onUnmount(fn: () => void): void {
-  if (_unmounts === null) {
+export function onUnmount(fn: Cleanup): void {
+  const cleanups = getActiveCleanups();
+  if (cleanups === null) {
     console.warn(
       "[reax] onUnmount called outside a dynamic reactive scope.",
     );
     return;
   }
-  _unmounts.push(fn);
+  cleanups.push(fn);
 }
 
 function formatText(value: unknown): string {
@@ -181,10 +202,18 @@ export function _render(
   if (typeof vnode.tag === "function") {
     const prevContext = getActiveContext();
     setActiveContext(context ?? null);
-    const prev = _unmounts;
-    _unmounts = teardowns ?? null;
+    const prevCleanups = getActiveCleanups();
+    setActiveCleanups(teardowns ?? null);
+    const prevErrorHandler = getActiveErrorHandler();
+    setActiveErrorHandler(errorHandler ?? null);
     try {
       const child = vnode.tag(vnode.props);
+      if (child instanceof Promise) {
+        console.warn(
+          "[reax] Async components are not supported; returning a Promise renders nothing.",
+        );
+        return;
+      }
       _render(child, container, teardowns, effectiveNs, errorHandler, context);
     } catch (err) {
       if (errorHandler) {
@@ -193,15 +222,22 @@ export function _render(
       }
       throw err;
     } finally {
-      _unmounts = prev;
+      setActiveCleanups(prevCleanups);
       setActiveContext(prevContext);
+      setActiveErrorHandler(prevErrorHandler);
     }
     return;
   }
 
   if (typeof vnode.tag !== "string") return;
   const el = createElementWithNS(vnode.tag, effectiveNs);
+  const deferValue = vnode.tag === "select" || vnode.tag === "textarea";
+  const deferredValue: [string, unknown][] = [];
   for (const [key, val] of Object.entries(vnode.props ?? {})) {
+    if (deferValue && key === "value") {
+      deferredValue.push([key, val]);
+      continue;
+    }
     setProp(el, key, val, teardowns, errorHandler);
   }
 
@@ -220,6 +256,10 @@ export function _render(
 
   for (const child of children) {
     _render(child, el, teardowns, childNs, errorHandler, context);
+  }
+
+  for (const [key, val] of deferredValue) {
+    setProp(el, key, val, teardowns, errorHandler);
   }
 
   container.appendChild(el);

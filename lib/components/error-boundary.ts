@@ -1,5 +1,6 @@
-import type { Child, VNode, Props } from "../types";
+import type { Child, VNode, Props, RenderChild } from "../types";
 import { flushMounts } from "../dom/render";
+import { clearBetween as clearBetweenNodes, runCleanups } from "../dom/utils";
 
 export const ErrorBoundaryTag = Symbol("ErrorBoundary");
 
@@ -22,14 +23,7 @@ export function renderErrorBoundary(
   container: Element | DocumentFragment | Node,
   teardowns: (() => void)[] | undefined,
   effectiveNs: string | undefined,
-  renderChild: (
-    child: Child,
-    container: Element | DocumentFragment | Node,
-    teardowns?: (() => void)[],
-    ns?: string,
-    errorHandler?: ((err: unknown) => void) | null,
-    context?: Map<symbol, unknown>,
-  ) => void,
+  renderChild: RenderChild,
   parentErrorHandler?: ((err: unknown) => void) | null,
   context?: Map<symbol, unknown>,
 ): void {
@@ -42,16 +36,9 @@ export function renderErrorBoundary(
   let isHandled = false;
 
   const clearBetween = () => {
-    activeDisposers.forEach((fn) => fn());
+    runCleanups(activeDisposers);
     activeDisposers = [];
-    if (startAnchor.parentNode) {
-      while (
-        startAnchor.nextSibling &&
-        startAnchor.nextSibling !== endAnchor
-      ) {
-        startAnchor.parentNode.removeChild(startAnchor.nextSibling);
-      }
-    }
+    clearBetweenNodes(startAnchor, endAnchor);
   };
 
   const handleError = (err: unknown) => {

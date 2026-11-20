@@ -2,11 +2,13 @@ import { describe, it, expect, beforeEach } from "vitest";
 import {
   render,
   signal,
+  computed,
   Show,
   For,
   Switch,
   Match,
   ErrorBoundary,
+  onMount,
   map,
   Subject,
 } from "reax";
@@ -260,6 +262,25 @@ describe("Control Flow Components", () => {
         expect(aliceNode.textContent).toBe("Alice-1");
         expect(bobNode.textContent).toBe("Bob-0");
       });
+
+      it("updates row content when a keyed item's value changes", () => {
+        type Todo = { id: number; title: string };
+        const todos = signal<Todo[]>([{ id: 1, title: "Task 1" }]);
+
+        render(
+          <ul>
+            <For each={todos} by="id">
+              {(todo) => <li id={`todo-${todo.id}`}>{todo.title}</li>}
+            </For>
+          </ul>,
+          container,
+        );
+
+        expect(container.querySelector("#todo-1")?.textContent).toBe("Task 1");
+
+        todos([{ id: 1, title: "Task 2" }]);
+        expect(container.querySelector("#todo-1")?.textContent).toBe("Task 2");
+      });
     });
   });
 
@@ -439,6 +460,103 @@ describe("Control Flow Components", () => {
       expect(container.querySelector("#stream-fallback")?.textContent).toBe(
         "Stream disconnected",
       );
+    });
+
+    it("catches errors thrown by a computed created under the boundary", () => {
+      const count = signal(0);
+
+      const Boom = () => {
+        const bad = computed(() => {
+          if (count() === 1) throw new Error("computed boom");
+          return count();
+        });
+        return <div>{bad()}</div>;
+      };
+
+      render(
+        <ErrorBoundary
+          fallback={(err) => (
+            <div id="computed-fallback">{String(err)}</div>
+          )}
+        >
+          <Boom />
+        </ErrorBoundary>,
+        container,
+      );
+
+      expect(container.textContent).toBe("0");
+      count(1);
+      expect(
+        container.querySelector("#computed-fallback")?.textContent,
+      ).toContain("computed boom");
+    });
+  });
+
+  describe("static inputs", () => {
+    it("renders <Show> with a static truthy condition", () => {
+      render(
+        <Show when={true}>
+          <div>Static</div>
+        </Show>,
+        container,
+      );
+
+      expect(container.textContent).toBe("Static");
+    });
+
+    it("renders <For> with a static array", () => {
+      render(
+        <For each={["A", "B"]}>{(item) => <span>{item}</span>}</For>,
+        container,
+      );
+
+      expect(container.textContent).toBe("AB");
+    });
+
+    it("renders <Match> with a static truthy condition", () => {
+      render(
+        <Switch>
+          <Match when={true}>yes</Match>
+        </Switch>,
+        container,
+      );
+
+      expect(container.textContent).toBe("yes");
+    });
+  });
+
+  describe("<For> fallback", () => {
+    it("runs onMount when an async list becomes empty", () => {
+      const items = signal<string[]>(["A"]);
+      let mounted = 0;
+
+      const EmptyFallback = () => {
+        onMount(() => {
+          mounted++;
+        });
+        return <span>Empty</span>;
+      };
+
+      render(
+        <For each={items} fallback={<EmptyFallback />}>
+          {(item) => <p>{item}</p>}
+        </For>,
+        container,
+      );
+
+      expect(container.textContent).toBe("A");
+      expect(mounted).toBe(0);
+
+      items([]);
+      expect(container.textContent).toBe("Empty");
+      expect(mounted).toBe(1);
+
+      items(["B"]);
+      expect(container.textContent).toBe("B");
+
+      items([]);
+      expect(container.textContent).toBe("Empty");
+      expect(mounted).toBe(2);
     });
   });
 });

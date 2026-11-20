@@ -1,4 +1,5 @@
 import { isObservable } from "rxjs";
+import { runCleanups } from "./utils";
 
 export const SVG_NS = "http://www.w3.org/2000/svg";
 export const MATHML_NS = "http://www.w3.org/1998/Math/MathML";
@@ -319,15 +320,21 @@ export function setProp(
   if (key === "classList") {
     if (isObservable(val)) {
       let currentTeardowns: (() => void)[] = [];
-      const sub = val.subscribe((nextObj) => {
-        currentTeardowns.forEach((fn) => fn());
-        currentTeardowns = [];
-        applyClassList(el, nextObj, currentTeardowns);
+      const sub = val.subscribe({
+        next: (nextObj) => {
+          runCleanups(currentTeardowns);
+          currentTeardowns = [];
+          applyClassList(el, nextObj, currentTeardowns);
+        },
+        error: (err) => {
+          if (onError) onError(err);
+          else console.error(`[reax] Unhandled observable error in prop "classList":`, err);
+        },
       });
       if (teardowns) {
         teardowns.push(() => {
           sub.unsubscribe();
-          currentTeardowns.forEach((fn) => fn());
+          runCleanups(currentTeardowns);
         });
       }
       return;
@@ -336,7 +343,29 @@ export function setProp(
     return;
   }
 
-  if (key.startsWith("on")) {
+  if (key === "style" && isObservable(val)) {
+    let currentTeardowns: (() => void)[] = [];
+    const sub = val.subscribe({
+      next: (nextStyle) => {
+        runCleanups(currentTeardowns);
+        currentTeardowns = [];
+        applyStyle(el, nextStyle, currentTeardowns);
+      },
+      error: (err) => {
+        if (onError) onError(err);
+        else console.error(`[reax] Unhandled observable error in prop "style":`, err);
+      },
+    });
+    if (teardowns) {
+      teardowns.push(() => {
+        sub.unsubscribe();
+        runCleanups(currentTeardowns);
+      });
+    }
+    return;
+  }
+
+  if (/^on[A-Z]/.test(key)) {
     const eventName = key.slice(2).toLowerCase();
     if (typeof val === "function" && !isObservable(val)) {
       const handler = val as (e: Event) => void;
@@ -352,9 +381,15 @@ export function setProp(
         if (currentHandler) currentHandler(e);
       };
       el.addEventListener(eventName, listener);
-      const sub = val.subscribe((next) => {
-        currentHandler =
-          typeof next === "function" ? (next as (e: Event) => void) : null;
+      const sub = val.subscribe({
+        next: (next) => {
+          currentHandler =
+            typeof next === "function" ? (next as (e: Event) => void) : null;
+        },
+        error: (err) => {
+          if (onError) onError(err);
+          else console.error(`[reax] Unhandled observable error in event "${key}":`, err);
+        },
       });
       if (teardowns) {
         teardowns.push(() => {

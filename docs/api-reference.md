@@ -67,18 +67,18 @@ function computed<T extends readonly Observable<unknown>[], R>(
 
 ## Rendering & Lifecycle
 
-### `render(vnode: JSXNode, container: ParentNode): Cleanup`
+### `render(vnode: JSXNode, container: ParentNode): void`
 
 Mounts a Reax component tree into a DOM container element.
 
 ```ts
 import { render } from "@snoofox/reax";
 
-const cleanup = render(<App />, document.getElementById("root")!);
+render(<App />, document.getElementById("root")!);
 ```
 
 - Mounts the component synchronously.
-- Returns a `Cleanup` function `() => void`. Calling it tears down the entire tree: removes all created DOM nodes, unsubscribes all active stream subscriptions, and triggers `onUnmount` callbacks.
+- The root never unmounts. Components set up once and stay mounted for the lifetime of the page; Reax does not re-render or tear down the root tree. Dynamic scopes (`<Show>`, `<For>`, `<Switch>`) mount and tear down their branches as their conditions change.
 
 ---
 
@@ -99,6 +99,8 @@ onMount(() => {
 });
 ```
 
+The returned cleanup runs when the enclosing dynamic scope (`<Show>`, `<For>`, `<Switch>`) unmounts its branch. At the root there is no unmount, so a cleanup returned from a root-level `onMount` is discarded.
+
 ---
 
 ### `onUnmount(fn: Cleanup): void`
@@ -112,6 +114,8 @@ onUnmount(() => {
   console.log("Component unmounted");
 });
 ```
+
+Only runs inside a dynamic reactive scope (`<Show>`, `<For>`, `<Switch>`). At the root, Reax warns and ignores the callback because the root never unmounts.
 
 ---
 
@@ -163,7 +167,7 @@ interface ForProps<T> {
 #### The `by` Key
 - **String**: `by="id"` accesses `item.id`.
 - **Function**: `by={(item, index) => item.uuid}`.
-- **Omitted**: Defaults to index-based reconciliation.
+- **Omitted**: Defaults to item identity. Items that are equal by identity keep their DOM nodes, so removing an item from the front does not remount the rest. Duplicate primitive values collapse into one row; pass `by` when your list can contain duplicates.
 - **`index$`**: Passed to children as an `Observable<number>` so position shifts do not recreate the child element.
 
 ---
@@ -221,7 +225,8 @@ interface ErrorBoundaryProps {
 ```
 
 - Catches synchronous exceptions thrown during child initialization.
-- Catches asynchronous stream failures (`subscriber.error(...)`).
+- Catches asynchronous stream failures (`subscriber.error(...)`) from bound observables.
+- Catches errors thrown by `computed` signals and control-flow condition streams created within the boundary.
 - Calling `reset()` clears the error and attempts to remount children.
 
 ---

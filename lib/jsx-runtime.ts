@@ -1,9 +1,20 @@
-import type { Tag, VNode, Child } from "./types";
+import type { Tag, VNode, Child, Component } from "./types";
 import type { IntrinsicElements } from "./jsx-types";
 
 export const Fragment = Symbol.for("reax.fragment");
 export type { IntrinsicElements };
+export type { JSX } from "./jsx-namespace";
 
+export function jsx<P>(
+  tag: Component<P>,
+  props: (P & { children?: Child }) | null,
+  key?: unknown,
+): VNode;
+export function jsx(
+  tag: string | symbol,
+  props: Record<string, unknown> | null,
+  key?: unknown,
+): VNode;
 export function jsx(
   tag: Tag,
   props: Record<string, unknown> | null,
@@ -21,14 +32,3 @@ export function jsx(
 }
 
 export const jsxs = jsx;
-
-export namespace JSX {
-  export type Element = VNode;
-  export interface ElementClass {
-    render(): Child;
-  }
-  export interface ElementChildrenAttribute {
-    children: {};
-  }
-  export type IntrinsicElements = import("./jsx-types").IntrinsicElements;
-}

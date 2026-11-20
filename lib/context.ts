@@ -31,13 +31,17 @@ export function setActiveContext(
   _activeContext = context;
 }
 
-export function createContext<T>(defaultValue?: T): Context<T> {
+export function createContext<T>(defaultValue: T): Context<T>;
+export function createContext<T>(): Context<T | undefined>;
+export function createContext<T>(
+  defaultValue?: T,
+): Context<T | undefined> {
   const id = Symbol("Context");
 
-  const context: Context<T> = {
+  const context: Context<T | undefined> = {
     id,
     defaultValue,
-    Provider(props: { value: T; children?: Child }): VNode {
+    Provider(props: { value: T | undefined; children?: Child }): VNode {
       return {
         tag: ProviderTag,
         props: {
