@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "jsxImportSource": "@snoofox/reax",
+    "strict": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "types": ["vite/client"],
+    "paths": {
+      "@snoofox/reax": ["../lib/index.ts"],
+      "@snoofox/reax/*": ["../lib/*"]
+    }
+  },
+  "include": ["src/**/*"]
+}
