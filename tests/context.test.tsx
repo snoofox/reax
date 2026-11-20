@@ -94,7 +94,7 @@ describe("Context API", () => {
     };
 
     render(
-      <UserContext.Provider value={{ name: "Ashwin" }}>
+      <UserContext.Provider value={{ name: "snoofox" }}>
         <RoleContext.Provider value="admin">
           <Profile />
         </RoleContext.Provider>
@@ -103,7 +103,7 @@ describe("Context API", () => {
     );
 
     expect(container.querySelector("#profile")?.textContent).toBe(
-      "Ashwin (admin)",
+      "snoofox (admin)",
     );
   });
 
