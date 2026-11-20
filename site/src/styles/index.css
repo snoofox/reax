@@ -300,6 +300,13 @@ nav {
     display: inline-block;
 }
 
+.dropdown-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 150;
+    background: transparent;
+}
+
 .nav-dropdown-btn {
     background: transparent;
     border: none;
@@ -346,6 +353,25 @@ nav {
     display: flex;
     flex-direction: column;
     gap: 0.2rem;
+}
+
+@media (max-width: 768px) {
+    .header-inner {
+        position: relative;
+    }
+    .nav-dropdown {
+        position: static;
+    }
+    .dropdown-menu {
+        position: absolute;
+        top: calc(100% + 0.35rem);
+        left: 1rem;
+        right: 1rem;
+        width: auto;
+        min-width: 0;
+        max-width: min(400px, calc(100vw - 2rem));
+        margin-inline: auto;
+    }
 }
 
 .dropdown-item {
@@ -681,22 +707,28 @@ p.hero-lead {
 
 .preview-split-grid {
     display: grid;
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     border-radius: 8px;
     overflow: hidden;
+    min-width: 0;
+    max-width: 100%;
 }
 
 @media (min-width: 900px) {
     .preview-split-grid {
-        grid-template-columns: 1.4fr 1fr;
+        grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
     }
     .preview-live-pane {
         border-right: 1px solid var(--clr-border);
+        border-bottom: none;
     }
 }
 
 .preview-code-pane {
     background: #0d111a;
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
 }
 
 .preview-code-pane .code-frame {
@@ -707,6 +739,8 @@ p.hero-lead {
     height: 100%;
     display: flex;
     flex-direction: column;
+    min-width: 0;
+    max-width: 100%;
 }
 
 .preview-code-pane .code-frame-pre {
@@ -714,6 +748,11 @@ p.hero-lead {
     flex: 1;
     max-height: 460px;
     font-size: 0.82rem;
+    overflow-x: auto;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    min-width: 0;
+    max-width: 100%;
 }
 
 .preview-live-pane {
@@ -721,6 +760,9 @@ p.hero-lead {
     display: flex;
     flex-direction: column;
     height: 100%;
+    min-width: 0;
+    max-width: 100%;
+    border-bottom: 1px solid var(--clr-border);
 }
 
 .preview-live-stage {
@@ -729,20 +771,23 @@ p.hero-lead {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: clamp(3rem, 6vw, 5rem) clamp(1.5rem, 4vw, 3rem);
-    gap: var(--space-5);
+    padding: clamp(2rem, 5vw, 4.5rem) clamp(1rem, 3vw, 2.5rem);
+    gap: var(--space-4);
+    min-width: 0;
+    max-width: 100%;
 }
 
 .counter-display-row {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: clamp(1.5rem, 4vw, 3rem);
+    gap: clamp(0.75rem, 3.5vw, 2.5rem);
+    max-width: 100%;
 }
 
 .counter-btn {
-    width: 56px;
-    height: 56px;
+    width: 54px;
+    height: 54px;
     border-radius: 12px;
     background: #111624;
     border: 1px solid var(--clr-border-light);
@@ -755,6 +800,7 @@ p.hero-lead {
     cursor: pointer;
     transition: all 120ms ease;
     user-select: none;
+    flex-shrink: 0;
 }
 
 .counter-btn:hover {
@@ -771,25 +817,30 @@ p.hero-lead {
 
 .counter-val {
     font-family: var(--font-code);
-    font-size: clamp(4.5rem, 9vw, 6.5rem);
-    line-height: 1;
+    font-size: clamp(2.75rem, 8vw, 6.5rem);
+    line-height: 1.1;
     font-weight: 700;
     color: var(--clr-code);
-    min-width: clamp(120px, 18vw, 200px);
+    min-width: clamp(80px, 16vw, 190px);
     text-align: center;
-    letter-spacing: -2px;
+    letter-spacing: -1px;
+    padding-inline: 0.25rem;
+    padding-block: 0.1em;
 }
 
 .counter-computed-pill {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 0.5rem;
-    padding: 0.5rem 1rem;
+    padding: 0.45rem 0.9rem;
     border-radius: 9999px;
     background: #0d121f;
     border: 1px solid var(--clr-border);
     font-family: var(--font-code);
-    font-size: 0.82rem;
+    font-size: clamp(0.75rem, 2.5vw, 0.82rem);
+    max-width: 100%;
+    text-align: center;
 }
 
 .counter-computed-val {
@@ -976,6 +1027,8 @@ p.hero-lead {
     border-radius: 6px;
     margin-block: 1.5rem;
     overflow: hidden;
+    min-width: 0;
+    max-width: 100%;
 }
 
 .code-frame-header {
@@ -1011,11 +1064,15 @@ p.hero-lead {
     padding: 1rem 1.15rem;
     margin: 0;
     overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
     font-family: var(--font-code);
     font-size: 0.88rem;
     line-height: 1.6;
     background: transparent;
     border: none;
+    min-width: 0;
+    max-width: 100%;
 }
 
 .code-frame-pre code {
@@ -1024,6 +1081,8 @@ p.hero-lead {
     padding: 0;
     color: #e6edf3;
     display: block;
+    width: max-content;
+    min-width: 100%;
 }
 
 /* Prism Token Themes */
@@ -2070,17 +2129,33 @@ footer#site-footer {
     margin-bottom: 1.5rem;
 }
 
+.footer-brand {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+}
+
+@media (min-width: 768px) {
+    .footer-brand {
+        flex-direction: row;
+        align-items: baseline;
+        gap: 0.85rem;
+    }
+}
+
 .footer-brand strong {
     font-family: var(--font-title);
     font-size: 1.35rem;
     letter-spacing: 1px;
     color: var(--clr-text);
-    margin-right: 0.75rem;
+    margin-right: 0;
 }
 
 .footer-brand span {
-    font-size: 0.85rem;
+    font-size: clamp(0.72rem, 2.6vw, 0.85rem);
     color: var(--clr-muted);
+    line-height: 1.4;
 }
 
 .footer-links {
@@ -2112,6 +2187,9 @@ footer#site-footer {
 
 /* ---------------------------------------- Responsive */
 @media (max-width: 640px) {
+    .page { padding-inline: 1rem; }
+    .header-inner { padding: 0.75rem 1rem; }
+    .counter-btn { width: 44px; height: 44px; font-size: 1.35rem; border-radius: 10px; }
     h1 { font-size: 2.25rem; }
     .benchmark-hud { grid-template-columns: repeat(2, 1fr); }
     .site-banner { height: 150px; }

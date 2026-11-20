@@ -4,7 +4,7 @@ export function Footer() {
       <div class="footer-inner">
         <div class="footer-brand">
           <strong>REAX</strong>
-          <span>Fine-grained reactive UI library powered by RxJS.</span>
+          <span>The power of RxJS with the syntax of React.</span>
         </div>
         <div class="footer-links">
           <a href="#/guide">Guide</a>
@@ -26,7 +26,10 @@ export function Footer() {
         </div>
       </div>
       <div class="footer-bottom">
-        <p>MIT License © 2026 snoofox</p>
+        <p class="footer-disclaimer">
+          Built for educational purposes. It will probably break in production, but you'll learn a lot watching it happen.
+        </p>
+        <p class="footer-copy">MIT License © 2026 snoofox</p>
       </div>
     </footer>
   );

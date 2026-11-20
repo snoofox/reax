@@ -5,17 +5,21 @@ export function CounterPreview() {
   const count = signal(0);
   const double = computed(() => count() * 2);
 
-  const counterCode = `const count = signal(0);
-const double = computed(() => count() * 2);
+  const counterCode = `import { signal, computed } from "@snoofox/reax";
 
-return (
-  <div class="counter">
-    <button onClick={() => count(c => c - 1)}>-</button>
-    <span>{count}</span>
-    <button onClick={() => count(c => c + 1)}>+</button>
-    <p>Double: {double}</p>
-  </div>
-);`;
+function Counter() {
+  const count = signal(0);
+  const double = computed(() => count() * 2);
+
+  return (
+    <div class="counter">
+      <button onClick={() => count(c => c - 1)}>-</button>
+      <span>{count}</span>
+      <button onClick={() => count(c => c + 1)}>+</button>
+      <p>Double: {double}</p>
+    </div>
+  );
+}`;
 
   return (
     <div class="interactive-preview-card">

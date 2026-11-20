@@ -36,6 +36,7 @@ export function Header() {
                   Showcases <span class="dropdown-chevron">▾</span>
                 </button>
                 <Show when={isShowcasesOpen}>
+                  <div class="dropdown-backdrop" onClick={() => isShowcasesOpen(false)} />
                   <div class="dropdown-menu" onClick={() => isShowcasesOpen(false)}>
                     <a href="#/showcase/speed" class="dropdown-item">
                       <span class="dropdown-title">10,000 Rows</span>

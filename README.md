@@ -1,6 +1,8 @@
 # Reax
 
-A fine-grained reactive UI library powered by RxJS.
+The power of RxJS with the syntax of React.
+
+A fine-grained reactive UI library where components run once on mount, and signals stream updates directly to DOM nodes without re-renders or virtual DOM diffs.
 
 ```tsx
 import { render, signal, computed, For } from "@snoofox/reax";
@@ -34,7 +36,7 @@ render(<App />, document.getElementById("root")!);
 
 - **RxJS Native Streams**: Every signal inherits directly from `Observable`. You get 15+ years of battle-tested operators (`debounceTime`, `switchMap`, `filter`, `combineLatest`) built directly into your state primitives without external state libraries.
 - **Fine-Grained DOM Precision**: Dynamic expressions bind subscriptions directly to target DOM properties. When an observable emits, only the specific text node or attribute updates in place. Setup functions execute once at mount, eliminating re-render loops and memoization boilerplate.
-- **Standard Language & Tooling**: Built on standard TypeScript and the automatic JSX transform (`react-jsx`). Works out of the box with Vite and esbuild with zero compiler plugins, macro transforms, or custom syntax extensions.
+- **Automatic Lifecycle Scoping**: Subscriptions and listeners are bound directly to the DOM hierarchy. When components, `<Show>`, or `<For>` branches unmount, all active streams and effects tear down automatically with zero memory leaks.
 
 ---
 

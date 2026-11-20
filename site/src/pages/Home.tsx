@@ -20,9 +20,9 @@ export function Home() {
       <div class="page page--home">
         <header id="frontpage">
           <h1>Reax</h1>
-          <p class="tagline">Fine-grained reactive UI library powered by RxJS.</p>
+          <p class="tagline">The power of RxJS with the syntax of React.</p>
           <p class="hero-lead">
-            Write standard JSX that binds directly to native DOM nodes. Components run once on mount, and signals update only the elements bound to them.
+            A fine-grained reactive UI library where components run once on mount, and signals stream updates directly to DOM nodes without re-renders or virtual DOM diffs.
           </p>
 
           <div class="quickstart-bar">
@@ -72,9 +72,9 @@ export function Home() {
                 <div class="arch-pillar">
                   <span class="arch-pillar-num">03</span>
                   <div>
-                    <h3>Zero Compiler Magic</h3>
+                    <h3>Automatic Lifecycle Cleanup</h3>
                     <p>
-                      Uses the standard <code>react-jsx</code> runtime with TypeScript, Vite, and esbuild. No proprietary compiler plugins, Babel transforms, or hidden magic.
+                      RxJS streams are notoriously prone to memory leaks if unsubscriptions are missed. Reax automatically ties subscription lifetimes to the DOM hierarchy. When elements or branches unmount, all active streams, listeners, and effects tear down cleanly with zero manual boilerplate.
                     </p>
                   </div>
                 </div>
