@@ -1,5 +1,6 @@
 import type { Tag, VNode, Child, Component } from "./types";
 import type { IntrinsicElements } from "./jsx-types";
+import { createVNode } from "./vnode";
 
 export const Fragment = Symbol.for("reax.fragment");
 export type { IntrinsicElements };
@@ -20,15 +21,7 @@ export function jsx(
   props: Record<string, unknown> | null,
   key?: unknown,
 ): VNode {
-  const { children, ...rest } = props ?? {};
-  return {
-    tag,
-    props: {
-      ...rest,
-      children: children as Child,
-    },
-    key,
-  };
+  return createVNode(tag, props, key);
 }
 
 export const jsxs = jsx;

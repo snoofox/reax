@@ -7,6 +7,7 @@ import {
   map,
 } from "rxjs";
 import {
+  attachSignal,
   getActiveListener,
   setActiveListener,
   type ReadonlySignal,
@@ -39,15 +40,7 @@ function makeSignal<T>(subj: BehaviorSubject<T>): ReadonlySignal<T> {
     return subj.value;
   }
 
-  Object.setPrototypeOf(sig, Observable.prototype);
-  (sig as unknown as Record<string, unknown>).source = subj;
-
-  Object.defineProperty(sig, "value", {
-    get: () => subj.value,
-    enumerable: true,
-  });
-
-  return sig as unknown as ReadonlySignal<T>;
+  return attachSignal(sig, subj);
 }
 
 export function computed<T>(

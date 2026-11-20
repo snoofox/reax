@@ -159,6 +159,19 @@ export function applyStyle(
   }
 }
 
+function applyBooleanState(
+  el: Element,
+  key: string,
+  prop: string,
+  val: unknown,
+): void {
+  const bool = Boolean(val);
+  const record = el as unknown as Record<string, unknown>;
+  if (record[prop] !== bool) record[prop] = bool;
+  if (bool) el.setAttribute(key, "");
+  else el.removeAttribute(key);
+}
+
 export function applyAttributeOrProperty(
   el: Element,
   key: string,
@@ -204,26 +217,17 @@ export function applyAttributeOrProperty(
   }
 
   if (key === "checked" && el instanceof HTMLInputElement) {
-    const bool = Boolean(val);
-    if (el.checked !== bool) el.checked = bool;
-    if (bool) el.setAttribute("checked", "");
-    else el.removeAttribute("checked");
+    applyBooleanState(el, key, "checked", val);
     return;
   }
 
   if (key === "selected" && el instanceof HTMLOptionElement) {
-    const bool = Boolean(val);
-    if (el.selected !== bool) el.selected = bool;
-    if (bool) el.setAttribute("selected", "");
-    else el.removeAttribute("selected");
+    applyBooleanState(el, key, "selected", val);
     return;
   }
 
   if (key === "muted" && el instanceof HTMLMediaElement) {
-    const bool = Boolean(val);
-    if (el.muted !== bool) el.muted = bool;
-    if (bool) el.setAttribute("muted", "");
-    else el.removeAttribute("muted");
+    applyBooleanState(el, key, "muted", val);
     return;
   }
 

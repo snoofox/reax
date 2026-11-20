@@ -69,6 +69,10 @@ function formatText(value: unknown): string {
   return String(value);
 }
 
+function toChildArray(children: unknown): Child[] {
+  return Array.isArray(children) ? children : [children as Child];
+}
+
 export function _render(
   vnode: Child,
   container: Element | DocumentFragment | Node,
@@ -119,9 +123,7 @@ export function _render(
   }
 
   if (vnode.tag === Fragment) {
-    const children = Array.isArray(vnode.props.children)
-      ? vnode.props.children
-      : [vnode.props.children];
+    const children = toChildArray(vnode.props.children);
     for (const child of children) {
       _render(child, container, teardowns, effectiveNs, errorHandler, context);
     }
@@ -131,9 +133,7 @@ export function _render(
   if (isProviderNode(vnode)) {
     const nextContext = new Map(context);
     nextContext.set(vnode.props.contextId, vnode.props.value);
-    const children = Array.isArray(vnode.props.children)
-      ? vnode.props.children
-      : [vnode.props.children];
+    const children = toChildArray(vnode.props.children);
     for (const child of children) {
       _render(
         child,
@@ -250,9 +250,7 @@ export function _render(
           ? undefined
           : effectiveNs;
 
-  const children = Array.isArray(vnode.props.children)
-    ? vnode.props.children
-    : [vnode.props.children];
+  const children = toChildArray(vnode.props.children);
 
   for (const child of children) {
     _render(child, el, teardowns, childNs, errorHandler, context);

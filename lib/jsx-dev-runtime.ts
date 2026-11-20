@@ -1,6 +1,7 @@
 import { Fragment } from "./jsx-runtime";
 import type { Tag, VNode, Child, Component } from "./types";
 import type { IntrinsicElements } from "./jsx-types";
+import { createVNode } from "./vnode";
 
 export { Fragment };
 export type { IntrinsicElements };
@@ -30,15 +31,8 @@ export function jsxDEV(
   source?: { fileName: string; lineNumber: number; columnNumber: number },
   self?: unknown,
 ): VNode {
-  const { children, ...rest } = props ?? {};
-  return {
-    tag,
-    props: {
-      ...rest,
-      children: children as Child,
-      __source: source,
-      __self: self,
-    },
-    key,
-  };
+  return createVNode(tag, props, key, {
+    __source: source,
+    __self: self,
+  });
 }

@@ -15,12 +15,7 @@ export type ForProps<T = unknown> = Props & {
   children: (item: T, index: Observable<number>) => Child;
 };
 
-export function For<T>(props: {
-  each: Observable<T[]> | T[];
-  by?: KeyFn<T> | (T extends object ? keyof T : never) | string;
-  fallback?: Child;
-  children: (item: T, index: Observable<number>) => Child;
-}): VNode {
+export function For<T>(props: ForProps<T>): VNode {
   return { tag: ForTag, props: props as Props };
 }
 
@@ -175,6 +170,34 @@ export function renderFor(
       }
 
       const childFn = props.children;
+      const createRow =
+        typeof childFn === "function"
+          ? (item: unknown, index$: Observable<number>) => {
+              const fragment = document.createDocumentFragment();
+              const disposers: (() => void)[] = [];
+              const prevCleanups = getActiveCleanups();
+              setActiveCleanups(disposers);
+              let childVNode: Child;
+              try {
+                childVNode = childFn(item, index$);
+              } finally {
+                setActiveCleanups(prevCleanups);
+              }
+              renderChild(
+                childVNode,
+                fragment,
+                disposers,
+                effectiveNs,
+                errorHandler,
+                context,
+              );
+              return {
+                fragment,
+                nodes: Array.from(fragment.childNodes),
+                disposers,
+              };
+            }
+          : null;
 
       let insertPoint: Node = endAnchor;
 
@@ -184,69 +207,32 @@ export function renderFor(
         const cached = map.get(key);
 
         if (!cached) {
-          if (typeof childFn !== "function") continue;
-          const fragment = document.createDocumentFragment();
-          const itemDisposers: (() => void)[] = [];
+          if (!createRow) continue;
           const index$ = new BehaviorSubject(i);
-          const prevCleanups = getActiveCleanups();
-          setActiveCleanups(itemDisposers);
-          let childVNode: Child;
-          try {
-            childVNode = childFn(item, index$.asObservable());
-          } finally {
-            setActiveCleanups(prevCleanups);
-          }
-          renderChild(
-            childVNode,
-            fragment,
-            itemDisposers,
-            effectiveNs,
-            errorHandler,
-            context,
+          const { fragment, nodes, disposers } = createRow(
+            item,
+            index$.asObservable(),
           );
-
-          const nodes = Array.from(fragment.childNodes);
-
           insertPoint.parentNode!.insertBefore(fragment, insertPoint);
-          map.set(key, { item, nodes, disposers: itemDisposers, index$ });
-
+          map.set(key, { item, nodes, disposers, index$ });
           if (nodes.length > 0 && nodes[0]) {
             insertPoint = nodes[0];
           }
         } else if (!shallowEqual(cached.item, item)) {
-          if (typeof childFn !== "function") continue;
+          if (!createRow) continue;
           runCleanups(cached.disposers);
           cached.nodes.forEach((node) => {
             if (node.parentNode) node.parentNode.removeChild(node);
           });
           cached.index$.next(i);
-
-          const fragment = document.createDocumentFragment();
-          const itemDisposers: (() => void)[] = [];
-          const prevCleanups = getActiveCleanups();
-          setActiveCleanups(itemDisposers);
-          let childVNode: Child;
-          try {
-            childVNode = childFn(item, cached.index$.asObservable());
-          } finally {
-            setActiveCleanups(prevCleanups);
-          }
-          renderChild(
-            childVNode,
-            fragment,
-            itemDisposers,
-            effectiveNs,
-            errorHandler,
-            context,
+          const { fragment, nodes, disposers } = createRow(
+            item,
+            cached.index$.asObservable(),
           );
-
-          const nodes = Array.from(fragment.childNodes);
-
           insertPoint.parentNode!.insertBefore(fragment, insertPoint);
           cached.item = item;
           cached.nodes = nodes;
-          cached.disposers = itemDisposers;
-
+          cached.disposers = disposers;
           if (nodes.length > 0 && nodes[0]) {
             insertPoint = nodes[0];
           }

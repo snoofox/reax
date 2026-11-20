@@ -1,15 +1,10 @@
-import type { VNode, Child } from "./lib/types";
-import type { IntrinsicElements as ReaxIntrinsicElements } from "./lib/jsx-types";
+import type { JSX as ReaxJSX } from "./lib/jsx-namespace";
 
 declare global {
   namespace JSX {
-    interface Element extends VNode {}
-    interface ElementClass {
-      render(): Child;
-    }
-    interface ElementChildrenAttribute {
-      children: {};
-    }
-    interface IntrinsicElements extends ReaxIntrinsicElements {}
+    interface Element extends ReaxJSX.Element {}
+    interface ElementClass extends ReaxJSX.ElementClass {}
+    interface ElementChildrenAttribute extends ReaxJSX.ElementChildrenAttribute {}
+    interface IntrinsicElements extends ReaxJSX.IntrinsicElements {}
   }
 }

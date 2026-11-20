@@ -114,6 +114,7 @@ export function renderSwitch(
   }
 
   if (subs.length === 0) {
+    runCleanups(matchCleanups);
     if (vnode.props.fallback !== undefined) {
       renderChild(
         vnode.props.fallback,

@@ -27,6 +27,21 @@ export type Signal<T> = Observable<T> & {
   readonly value: T;
 };
 
+export function attachSignal<T, A extends unknown[], R>(
+  sig: (...args: A) => R,
+  subj: BehaviorSubject<T>,
+): ((...args: A) => R) & ReadonlySignal<T> {
+  Object.setPrototypeOf(sig, Observable.prototype);
+  (sig as unknown as Record<string, unknown>).source = subj;
+
+  Object.defineProperty(sig, "value", {
+    get: () => subj.value,
+    enumerable: true,
+  });
+
+  return sig as unknown as ((...args: A) => R) & ReadonlySignal<T>;
+}
+
 export function signal<T>(initial: T, options?: SignalOptions<T>): Signal<T> {
   const subj = new BehaviorSubject<T>(initial);
   const equals =
@@ -51,13 +66,5 @@ export function signal<T>(initial: T, options?: SignalOptions<T>): Signal<T> {
     subj.next(val as T);
   }
 
-  Object.setPrototypeOf(sig, Observable.prototype);
-  (sig as unknown as Record<string, unknown>).source = subj;
-
-  Object.defineProperty(sig, "value", {
-    get: () => subj.value,
-    enumerable: true,
-  });
-
-  return sig as unknown as Signal<T>;
+  return attachSignal(sig, subj) as unknown as Signal<T>;
 }
