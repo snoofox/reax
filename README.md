@@ -30,15 +30,11 @@ render(<App />, document.getElementById("root")!);
 
 ---
 
-## Overview
+## Why Reax?
 
-Reax provides declarative UI with fine-grained reactivity using standard JSX and RxJS.
-
-Unlike Virtual DOM libraries where component functions re-evaluate on every state change, a Reax component function runs **once** during initialization to instantiate real DOM nodes. Dynamic expressions within JSX bind directly to RxJS Observables, updating only the specific text nodes or attributes that depend on that state.
-
-- **No Virtual DOM**: Updates bypass tree reconciliation and mutate targeted DOM nodes directly.
-- **No Compiler Required**: Operates using standard automatic JSX (`react-jsx`), compatible with Vite, TypeScript, and esbuild without custom plugins.
-- **RxJS Native**: State cells are standard Observables, allowing direct composition with operators like `map`, `filter`, `debounceTime`, and `switchMap`.
+- **RxJS Native Streams**: Every signal inherits directly from `Observable`. You get 15+ years of battle-tested operators (`debounceTime`, `switchMap`, `filter`, `combineLatest`) built directly into your state primitives without external state libraries.
+- **Fine-Grained DOM Precision**: Dynamic expressions bind subscriptions directly to target DOM properties. When an observable emits, only the specific text node or attribute updates in place. Setup functions execute once at mount, eliminating re-render loops and memoization boilerplate.
+- **Standard Language & Tooling**: Built on standard TypeScript and the automatic JSX transform (`react-jsx`). Works out of the box with Vite and esbuild with zero compiler plugins, macro transforms, or custom syntax extensions.
 
 ---
 
@@ -187,8 +183,8 @@ function Child() {
 
 ## Documentation
 
-- [Guide](file:///home/arch/projects/reax/docs/guide.md) — Comprehensive guide covering forms, asynchronous pipelines, and architecture patterns.
-- [API Reference](file:///home/arch/projects/reax/docs/api-reference.md) — Complete TypeScript signatures and parameter specifications.
+- [Guide](file:///home/arch/projects/reax/docs/guide.md): Comprehensive guide covering forms, asynchronous pipelines, and architecture patterns.
+- [API Reference](file:///home/arch/projects/reax/docs/api-reference.md): Complete TypeScript signatures and parameter specifications.
 
 ---
 

@@ -1,14 +1,12 @@
 # Reax Guide
 
-This guide covers how to build applications with Reax, from basic reactivity to complex state and async data pipelines.
-
----
+This guide covers how to build applications with the Reax reactive UI library, from basic reactivity to complex asynchronous data pipelines.
 
 ## 1. Components & Reactivity
 
 ### The Component Model
 
-In Reax, **a component is a setup function that runs once when mounted**. It constructs the real DOM elements, sets up reactive subscriptions, and never runs again.
+In Reax, a component is a setup function that runs once when mounted. It constructs real DOM elements, connects reactive signals, and finishes.
 
 ```tsx
 import { signal } from "@snoofox/reax";
@@ -28,10 +26,10 @@ export function Counter() {
 }
 ```
 
-Because the function body never re-runs:
+Because the component function never re-evaluates:
 - You never need `useCallback` or `useMemo`.
 - Closures and callbacks never go stale.
-- You can place signals, subscriptions, or helper functions anywhere.
+- Signals and subscriptions live cleanly in the component scope.
 
 ---
 
