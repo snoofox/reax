@@ -208,4 +208,56 @@ describe("computed", () => {
     count(4);
     expect(emissions).toEqual([true, false]);
   });
+
+  it("dynamically updates dependencies when conditional branch changes", () => {
+    const showA = signal(true);
+    const a = signal("A1");
+    const b = signal("B1");
+
+    const text = computed(() => (showA() ? a() : b()));
+    expect(text()).toBe("A1");
+
+    a("A2");
+    expect(text()).toBe("A2");
+
+    showA(false);
+    expect(text()).toBe("B1");
+
+    b("B2");
+    expect(text()).toBe("B2");
+
+    a("A3");
+    expect(text()).toBe("B2");
+
+    showA(true);
+    expect(text()).toBe("A3");
+  });
+
+  it("stops listening to stale dependencies after switching branches", () => {
+    const cond = signal(true);
+    const a = signal(1);
+    const b = signal(10);
+    let runs = 0;
+
+    const res = computed(() => {
+      runs++;
+      return cond() ? a() : b();
+    });
+
+    expect(runs).toBe(1);
+    expect(res()).toBe(1);
+
+    cond(false);
+    expect(runs).toBe(2);
+    expect(res()).toBe(10);
+
+    a(2);
+    a(3);
+    expect(runs).toBe(2);
+    expect(res()).toBe(10);
+
+    b(20);
+    expect(runs).toBe(3);
+    expect(res()).toBe(20);
+  });
 });
