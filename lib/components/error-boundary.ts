@@ -28,8 +28,10 @@ export function renderErrorBoundary(
     teardowns?: (() => void)[],
     ns?: string,
     errorHandler?: ((err: unknown) => void) | null,
+    context?: Map<symbol, unknown>,
   ) => void,
   parentErrorHandler?: ((err: unknown) => void) | null,
+  context?: Map<symbol, unknown>,
 ): void {
   const startAnchor = document.createComment("error-boundary-start");
   const endAnchor = document.createComment("error-boundary-end");
@@ -78,6 +80,7 @@ export function renderErrorBoundary(
       activeDisposers,
       effectiveNs,
       parentErrorHandler,
+      context,
     );
     endAnchor.parentNode!.insertBefore(fragment, endAnchor);
     flushMounts();
@@ -93,6 +96,7 @@ export function renderErrorBoundary(
         activeDisposers,
         effectiveNs,
         handleError,
+        context,
       );
       endAnchor.parentNode!.insertBefore(fragment, endAnchor);
       flushMounts();

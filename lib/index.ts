@@ -7,6 +7,11 @@ export {
   type ErrorBoundaryProps,
 } from "./components/error-boundary";
 export {
+  createContext,
+  useContext,
+  type Context,
+} from "./context";
+export {
   signal,
   type Signal,
   type ReadonlySignal,

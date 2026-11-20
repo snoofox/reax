@@ -14,6 +14,11 @@ import {
   isErrorBoundaryNode,
   renderErrorBoundary,
 } from "../components/error-boundary";
+import {
+  isProviderNode,
+  getActiveContext,
+  setActiveContext,
+} from "../context";
 
 let _mounts: (() => void)[] = [];
 let _unmounts: (() => void)[] | null = null;
@@ -49,6 +54,7 @@ export function _render(
   teardowns?: (() => void)[],
   currentNs?: string,
   errorHandler?: ((err: unknown) => void) | null,
+  context?: Map<symbol, unknown>,
 ): void {
   if (vnode == null || typeof vnode === "boolean") return;
 
@@ -67,7 +73,7 @@ export function _render(
 
   if (Array.isArray(vnode)) {
     for (const child of vnode) {
-      _render(child, container, teardowns, effectiveNs, errorHandler);
+      _render(child, container, teardowns, effectiveNs, errorHandler, context);
     }
     return;
   }
@@ -96,23 +102,66 @@ export function _render(
       ? vnode.props.children
       : [vnode.props.children];
     for (const child of children) {
-      _render(child, container, teardowns, effectiveNs, errorHandler);
+      _render(child, container, teardowns, effectiveNs, errorHandler, context);
+    }
+    return;
+  }
+
+  if (isProviderNode(vnode)) {
+    const nextContext = new Map(context);
+    nextContext.set(vnode.props.contextId, vnode.props.value);
+    const children = Array.isArray(vnode.props.children)
+      ? vnode.props.children
+      : [vnode.props.children];
+    for (const child of children) {
+      _render(
+        child,
+        container,
+        teardowns,
+        effectiveNs,
+        errorHandler,
+        nextContext,
+      );
     }
     return;
   }
 
   if (isShowNode(vnode)) {
-    renderShow(vnode, container, teardowns, effectiveNs, _render, errorHandler);
+    renderShow(
+      vnode,
+      container,
+      teardowns,
+      effectiveNs,
+      _render,
+      errorHandler,
+      context,
+    );
     return;
   }
 
   if (isForNode(vnode)) {
-    renderFor(vnode, container, teardowns, effectiveNs, _render, errorHandler);
+    renderFor(
+      vnode,
+      container,
+      teardowns,
+      effectiveNs,
+      _render,
+      errorHandler,
+      context,
+    );
     return;
   }
 
   if (isSwitchNode(vnode)) {
-    renderSwitch(vnode, container, teardowns, effectiveNs, _render, errorHandler);
+    renderSwitch(
+      vnode,
+      container,
+      teardowns,
+      effectiveNs,
+      _render,
+      errorHandler,
+      context,
+    );
     return;
   }
 
@@ -124,16 +173,19 @@ export function _render(
       effectiveNs,
       _render,
       errorHandler,
+      context,
     );
     return;
   }
 
   if (typeof vnode.tag === "function") {
+    const prevContext = getActiveContext();
+    setActiveContext(context ?? null);
     const prev = _unmounts;
     _unmounts = teardowns ?? null;
     try {
       const child = vnode.tag(vnode.props);
-      _render(child, container, teardowns, effectiveNs, errorHandler);
+      _render(child, container, teardowns, effectiveNs, errorHandler, context);
     } catch (err) {
       if (errorHandler) {
         errorHandler(err);
@@ -142,6 +194,7 @@ export function _render(
       throw err;
     } finally {
       _unmounts = prev;
+      setActiveContext(prevContext);
     }
     return;
   }
@@ -166,7 +219,7 @@ export function _render(
     : [vnode.props.children];
 
   for (const child of children) {
-    _render(child, el, teardowns, childNs, errorHandler);
+    _render(child, el, teardowns, childNs, errorHandler, context);
   }
 
   container.appendChild(el);

@@ -44,8 +44,10 @@ export function renderSwitch(
     teardowns?: (() => void)[],
     ns?: string,
     errorHandler?: ((err: unknown) => void) | null,
+    context?: Map<symbol, unknown>,
   ) => void,
   errorHandler?: ((err: unknown) => void) | null,
+  context?: Map<symbol, unknown>,
 ): void {
   const rawChildren = vnode.props.children;
   const child = Array.isArray(rawChildren)
@@ -115,6 +117,7 @@ export function renderSwitch(
           disposers,
           effectiveNs,
           errorHandler,
+          context,
         );
       }
     } else if (vnode.props.fallback !== undefined) {
@@ -124,6 +127,7 @@ export function renderSwitch(
         disposers,
         effectiveNs,
         errorHandler,
+        context,
       );
     }
 

@@ -5,6 +5,7 @@ export type {
   SignalOptions,
 } from "./reactivity/signal";
 export type { ErrorBoundaryProps } from "./components/error-boundary";
+export type { Context } from "./context";
 
 export type Props = {
   children?: unknown;

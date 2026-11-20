@@ -30,8 +30,10 @@ export function renderShow(
     teardowns?: (() => void)[],
     ns?: string,
     errorHandler?: ((err: unknown) => void) | null,
+    context?: Map<symbol, unknown>,
   ) => void,
   errorHandler?: ((err: unknown) => void) | null,
+  context?: Map<symbol, unknown>,
 ): void {
   if (!isObservable(vnode.props.when)) return;
 
@@ -69,6 +71,7 @@ export function renderShow(
         disposers,
         effectiveNs,
         errorHandler,
+        context,
       );
     } else if (vnode.props.fallback !== undefined) {
       renderChild(
@@ -77,6 +80,7 @@ export function renderShow(
         disposers,
         effectiveNs,
         errorHandler,
+        context,
       );
     }
 

@@ -53,8 +53,10 @@ export function renderFor(
     teardowns?: (() => void)[],
     ns?: string,
     errorHandler?: ((err: unknown) => void) | null,
+    context?: Map<symbol, unknown>,
   ) => void,
   errorHandler?: ((err: unknown) => void) | null,
+  context?: Map<symbol, unknown>,
 ): void {
   const props = vnode.props;
   if (!isObservable(props.each)) return;
@@ -105,6 +107,7 @@ export function renderFor(
           fallbackDisposers,
           effectiveNs,
           errorHandler,
+          context,
         );
         fallbackNodes = Array.from(fragment.childNodes);
         endAnchor.parentNode!.insertBefore(fragment, endAnchor);
@@ -153,6 +156,7 @@ export function renderFor(
           itemDisposers,
           effectiveNs,
           errorHandler,
+          context,
         );
 
         const nodes = Array.from(fragment.childNodes);
