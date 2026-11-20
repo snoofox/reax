@@ -7,7 +7,7 @@
     "allowArbitraryExtensions": true,
     "skipLibCheck": true,
     "jsx": "react-jsx",
-    "jsxImportSource": "reaxjs",
+    "jsxImportSource": "@snoofox/reax",
 
     "moduleResolution": "bundler",
     "verbatimModuleSyntax": true,
@@ -19,7 +19,10 @@
       "reax/jsx-dev-runtime": ["./lib/jsx-dev-runtime.ts"],
       "reaxjs": ["./lib/index.ts"],
       "reaxjs/jsx-runtime": ["./lib/jsx-runtime.ts"],
-      "reaxjs/jsx-dev-runtime": ["./lib/jsx-dev-runtime.ts"]
+      "reaxjs/jsx-dev-runtime": ["./lib/jsx-dev-runtime.ts"],
+      "@snoofox/reax": ["./lib/index.ts"],
+      "@snoofox/reax/jsx-runtime": ["./lib/jsx-runtime.ts"],
+      "@snoofox/reax/jsx-dev-runtime": ["./lib/jsx-dev-runtime.ts"]
     },
 
     "noUnusedLocals": true,

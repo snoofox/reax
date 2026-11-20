@@ -1,6 +1,6 @@
 # API Reference
 
-Complete TypeScript reference for all functions, components, props, and types exported by `reaxjs`.
+Complete TypeScript reference for all functions, components, props, and types exported by `@snoofox/reax`.
 
 ---
 
@@ -11,7 +11,7 @@ Complete TypeScript reference for all functions, components, props, and types ex
 Creates a writable reactive cell.
 
 ```ts
-import { signal, type Signal, type SignalOptions } from "reaxjs";
+import { signal, type Signal, type SignalOptions } from "@snoofox/reax";
 
 const count = signal(0);
 ```
@@ -72,7 +72,7 @@ function computed<T extends readonly Observable<unknown>[], R>(
 Mounts a Reax component tree into a DOM container element.
 
 ```ts
-import { render } from "reaxjs";
+import { render } from "@snoofox/reax";
 
 const cleanup = render(<App />, document.getElementById("root")!);
 ```
@@ -87,7 +87,7 @@ const cleanup = render(<App />, document.getElementById("root")!);
 Registers a callback that runs immediately after the component's DOM elements are attached to the document.
 
 ```ts
-import { onMount } from "reaxjs";
+import { onMount } from "@snoofox/reax";
 
 onMount(() => {
   console.log("DOM nodes mounted");
@@ -106,7 +106,7 @@ onMount(() => {
 Registers a teardown callback that runs when the component is removed from the DOM.
 
 ```ts
-import { onUnmount } from "reaxjs";
+import { onUnmount } from "@snoofox/reax";
 
 onUnmount(() => {
   console.log("Component unmounted");
@@ -332,5 +332,5 @@ import {
   merge,
   fromEvent,
   interval,
-} from "reaxjs";
+} from "@snoofox/reax";
 ```

@@ -9,7 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "reaxjs": "^0.1.0"
+    "@snoofox/reax": "^0.1.0"
   },
   "devDependencies": {
     "typescript": "~5.7.0",

@@ -11,7 +11,7 @@ This guide covers how to build applications with Reax, from basic reactivity to 
 In Reax, **a component is a setup function that runs once when mounted**. It constructs the real DOM elements, sets up reactive subscriptions, and never runs again.
 
 ```tsx
-import { signal } from "reaxjs";
+import { signal } from "@snoofox/reax";
 
 export function Counter() {
   const count = signal(0);
@@ -40,7 +40,7 @@ Because the function body never re-runs:
 Signals are writable reactive cells.
 
 ```ts
-import { signal } from "reaxjs";
+import { signal } from "@snoofox/reax";
 
 const count = signal(0);
 
@@ -80,7 +80,7 @@ Use `computed` whenever a value depends on other signals.
 When given a function with zero arguments, `computed` automatically tracks any signal read during execution:
 
 ```tsx
-import { signal, computed } from "reaxjs";
+import { signal, computed } from "@snoofox/reax";
 
 const first = signal("Ada");
 const last = signal("Lovelace");
@@ -133,7 +133,7 @@ When passing reactive data to child components, **pass the signal or Observable 
 Inside the child component:
 
 ```tsx
-import { type Signal } from "reaxjs";
+import { type Signal } from "@snoofox/reax";
 
 interface ChildProps {
   count: Signal<number>;
@@ -151,7 +151,7 @@ function Child({ count }: ChildProps) {
 Because Reax binds signals directly to DOM elements, handling form inputs is straightforward:
 
 ```tsx
-import { signal } from "reaxjs";
+import { signal } from "@snoofox/reax";
 
 export function FormExample() {
   const text = signal("");
@@ -189,7 +189,7 @@ export function FormExample() {
 When you need direct access to a native DOM node (e.g. to call `.focus()`, `.scrollIntoView()`, or measure an element):
 
 ```tsx
-import { onMount } from "reaxjs";
+import { onMount } from "@snoofox/reax";
 
 export function AutoFocusInput() {
   let inputEl: HTMLInputElement | null = null;
@@ -215,7 +215,7 @@ Because component bodies run only once, standard JavaScript `if` statements and 
 Mounts or unmounts a DOM branch based on a condition:
 
 ```tsx
-import { Show, signal } from "reaxjs";
+import { Show, signal } from "@snoofox/reax";
 
 function AuthBar() {
   const user = signal<{ name: string } | null>(null);
@@ -241,7 +241,7 @@ When switching branches, Reax automatically disposes of all subscriptions and DO
 Renders an array with keyed in-place DOM reuse:
 
 ```tsx
-import { For, signal } from "reaxjs";
+import { For, signal } from "@snoofox/reax";
 
 interface Todo {
   id: number;
@@ -277,7 +277,7 @@ function TodoList() {
 Pattern match between multiple states:
 
 ```tsx
-import { Switch, Match, signal, computed } from "reaxjs";
+import { Switch, Match, signal, computed } from "@snoofox/reax";
 
 type State = "idle" | "loading" | "success" | "error";
 
@@ -305,7 +305,7 @@ function View() {
 Catches both synchronous component exceptions and asynchronous stream errors:
 
 ```tsx
-import { ErrorBoundary } from "reaxjs";
+import { ErrorBoundary } from "@snoofox/reax";
 
 function App() {
   return (
@@ -333,7 +333,7 @@ Share state across deeply nested components without passing props through interm
 ### Step 1: Create the Context
 
 ```ts
-import { createContext, signal, type Signal } from "reaxjs";
+import { createContext, signal, type Signal } from "@snoofox/reax";
 
 interface UserContextType {
   user: Signal<{ name: string } | null>;
@@ -364,7 +364,7 @@ export function App() {
 ### Step 3: Consume in Any Child
 
 ```tsx
-import { useContext } from "reaxjs";
+import { useContext } from "@snoofox/reax";
 import { UserContext } from "./user-context";
 
 export function UserBadge() {
@@ -440,7 +440,7 @@ SVG elements and attributes (`viewBox`, `strokeWidth`, `xmlns`) work with automa
 Runs immediately after the component's elements are inserted into the DOM:
 
 ```tsx
-import { onMount } from "reaxjs";
+import { onMount } from "@snoofox/reax";
 
 onMount(() => {
   const id = setInterval(() => console.log("tick"), 1000);
@@ -455,7 +455,7 @@ onMount(() => {
 Runs when the component is removed from the DOM:
 
 ```tsx
-import { onUnmount } from "reaxjs";
+import { onUnmount } from "@snoofox/reax";
 
 onUnmount(() => {
   console.log("Component unmounted");
@@ -471,7 +471,7 @@ Because every signal is an RxJS Observable, complex asynchronous logic requires 
 ### Debounced Live Search
 
 ```tsx
-import { signal, debounceTime, distinctUntilChanged, switchMap } from "reaxjs";
+import { signal, debounceTime, distinctUntilChanged, switchMap } from "@snoofox/reax";
 
 export function LiveSearch() {
   const query = signal("");
@@ -501,7 +501,7 @@ export function LiveSearch() {
 ### Polling / Interval Stream
 
 ```tsx
-import { interval, map } from "reaxjs";
+import { interval, map } from "@snoofox/reax";
 
 export function Clock() {
   const time$ = interval(1000).pipe(

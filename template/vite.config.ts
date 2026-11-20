@@ -3,6 +3,6 @@ import { defineConfig } from "vite";
 export default defineConfig({
   esbuild: {
     jsx: "automatic",
-    jsxImportSource: "reaxjs",
+    jsxImportSource: "@snoofox/reax",
   },
 });

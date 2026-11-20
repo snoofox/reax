@@ -1,7 +1,31 @@
 {
-  "name": "reaxjs",
+  "name": "@snoofox/reax",
   "version": "0.1.0",
   "description": "A fine-grained reactive UI library powered by RxJS.",
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": [
+    "reactive",
+    "reactivity",
+    "signals",
+    "rxjs",
+    "fine-grained",
+    "jsx",
+    "ui",
+    "state-management",
+    "no-vdom"
+  ],
+  "author": "snoofox",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/snoofox/reax.git"
+  },
+  "homepage": "https://github.com/snoofox/reax#readme",
+  "bugs": {
+    "url": "https://github.com/snoofox/reax/issues"
+  },
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",

@@ -1,4 +1,4 @@
-import { signal, computed, For } from "reaxjs";
+import { signal, computed, For } from "@snoofox/reax";
 
 export function App() {
   const count = signal(0);

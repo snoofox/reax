@@ -3,7 +3,7 @@
 A fine-grained reactive UI library powered by RxJS.
 
 ```tsx
-import { render, signal, computed, For } from "reaxjs";
+import { render, signal, computed, For } from "@snoofox/reax";
 
 function App() {
   const count = signal(0);
@@ -60,7 +60,7 @@ pnpm dev
 Install the package:
 
 ```bash
-pnpm add reaxjs
+pnpm add @snoofox/reax
 ```
 
 Configure `tsconfig.json` to use Reax's JSX runtime:
@@ -69,7 +69,7 @@ Configure `tsconfig.json` to use Reax's JSX runtime:
 {
   "compilerOptions": {
     "jsx": "react-jsx",
-    "jsxImportSource": "reaxjs"
+    "jsxImportSource": "@snoofox/reax"
   }
 }
 ```
@@ -82,7 +82,7 @@ import { defineConfig } from "vite";
 export default defineConfig({
   esbuild: {
     jsx: "automatic",
-    jsxImportSource: "reaxjs",
+    jsxImportSource: "@snoofox/reax",
   },
 });
 ```

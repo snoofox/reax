@@ -19,6 +19,9 @@ export default defineConfig({
       "reaxjs/jsx-dev-runtime": resolve(rootDir, "lib/jsx-dev-runtime.ts"),
       "reaxjs/jsx-runtime": resolve(rootDir, "lib/jsx-runtime.ts"),
       reaxjs: resolve(rootDir, "lib/index.ts"),
+      "@snoofox/reax/jsx-dev-runtime": resolve(rootDir, "lib/jsx-dev-runtime.ts"),
+      "@snoofox/reax/jsx-runtime": resolve(rootDir, "lib/jsx-runtime.ts"),
+      "@snoofox/reax": resolve(rootDir, "lib/index.ts"),
     },
   },
 });
