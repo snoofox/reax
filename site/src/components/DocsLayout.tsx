@@ -30,6 +30,7 @@ export function DocsLayout({
       behavior: "smooth",
       block: "start",
     });
+    history.replaceState(null, "", `${basePath}#${id}`);
   };
 
   return (

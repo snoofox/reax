@@ -2,6 +2,7 @@ import { DocsLayout } from "../components/DocsLayout";
 import { CodeBlock } from "../components/CodeBlock";
 
 const nav = [
+  { id: "starter", label: "Quick Start" },
   { id: "components", label: "How components work" },
   { id: "signals", label: "1. Signals" },
   { id: "derived", label: "2. Derived values" },
@@ -9,21 +10,38 @@ const nav = [
   { id: "classes", label: "4. Dynamic classes" },
   { id: "context", label: "5. Context" },
   { id: "rxjs", label: "6. RxJS operators" },
+  { id: "lifecycle", label: "7. Lifecycle & cleanup" },
 ];
 
-export function Guide() {
+export function Docs() {
+  const scaffoldSnippet = `npx degit snoofox/reax/template my-app
+cd my-app
+pnpm install
+pnpm dev`;
+
+  const existingProjectSnippet = `pnpm add @snoofox/reax`;
+
+  const viteConfigSnippet = `import { defineConfig } from "vite";
+
+export default defineConfig({
+  esbuild: {
+    jsx: "automatic",
+    jsxImportSource: "@snoofox/reax",
+  },
+});`;
+
   const signalSnippet = `import { signal } from "@snoofox/reax";
 
 const count = signal(0);
 
-// Read current value
 console.log(count()); // 0
-
-// Set value directly
 count(5);
+count((c) => c + 1);
 
-// Update using previous value
-count(c => c + 1);`;
+const pos = signal(
+  { x: 0, y: 0 },
+  { equals: (prev, next) => prev.x === next.x && prev.y === next.y }
+);`;
 
   const computedSnippet = `import { signal, computed } from "@snoofox/reax";
 
@@ -31,32 +49,32 @@ const count = signal(3);
 const double = computed(() => count() * 2);
 
 console.log(double()); // 6
-
 count(10);
-console.log(double()); // 20`;
+console.log(double()); // 20
+
+const first = signal("Ada");
+const last = signal("Lovelace");
+const fullName = computed([first, last], ([f, l]) => \`\${f} \${l}\`);`;
 
   const controlFlowSnippet = `import { signal, computed, Show, For, Switch, Match } from "@snoofox/reax";
 
-function UserList() {
+export function UserDashboard() {
   const isLoggedIn = signal(true);
   const users = signal(["Alice", "Bob", "Charlie"]);
   const role = signal<"admin" | "user" | "guest">("admin");
 
   return (
     <div>
-      {/* Show / hide */}
       <Show when={isLoggedIn} fallback={<p>Please log in.</p>}>
         <p>Welcome back!</p>
       </Show>
 
-      {/* Keyed list */}
       <ul>
         <For each={users}>
           {(name) => <li>User: {name}</li>}
         </For>
       </ul>
 
-      {/* Pattern matching */}
       <Switch fallback={<p>Standard user interface</p>}>
         <Match when={computed(() => role() === "admin")}>
           <p>Admin Panel</p>
@@ -71,17 +89,16 @@ function UserList() {
 
   const classListSnippet = `import { signal, computed } from "@snoofox/reax";
 
-function ToggleButton() {
+export function ToggleButton() {
   const active = signal(false);
-  const inactive = computed(() => !active());
 
   return (
     <button
-      onClick={() => active(a => !a)}
+      onClick={() => active((a) => !a)}
       classList={{
         "btn-base": true,
-        "bg-green-500 text-white": active,
-        "bg-gray-200 text-gray-800": inactive,
+        "btn-active": active,
+        "btn-inactive": computed(() => !active()),
       }}
     >
       Toggle
@@ -89,18 +106,18 @@ function ToggleButton() {
   );
 }`;
 
-  const contextSnippet = `import { createContext, useContext, signal } from "@snoofox/reax";
+  const contextSnippet = `import { createContext, useContext, signal, type Signal } from "@snoofox/reax";
 
 interface ThemeContextType {
-  dark: () => boolean;
+  dark: Signal<boolean>;
   toggle: () => void;
 }
 
 const ThemeContext = createContext<ThemeContextType>();
 
-function App() {
+export function App() {
   const dark = signal(true);
-  const toggle = () => dark(d => !d);
+  const toggle = () => dark((d) => !d);
 
   return (
     <ThemeContext.Provider value={{ dark, toggle }}>
@@ -120,12 +137,12 @@ function ChildComponent() {
 
   const rxjsSnippet = `import { signal, debounceTime, distinctUntilChanged } from "@snoofox/reax";
 
-function SearchInput() {
+export function SearchInput() {
   const query = signal("");
 
   const debounced = query.pipe(
     debounceTime(300),
-    distinctUntilChanged()
+    distinctUntilChanged(),
   );
 
   return (
@@ -142,35 +159,68 @@ function SearchInput() {
   );
 }`;
 
+  const lifecycleSnippet = `import { onMount, onUnmount } from "@snoofox/reax";
+
+export function WindowWatcher() {
+  onMount(() => {
+    const handleResize = () => console.log(window.innerWidth);
+    window.addEventListener("resize", handleResize);
+
+    return () => window.removeEventListener("resize", handleResize);
+  });
+
+  onUnmount(() => {
+    console.log("Component unmounted");
+  });
+
+  return <div />;
+}`;
+
   return (
     <DocsLayout
-      eyebrow="Guide"
-      title="Guide"
+      eyebrow="Documentation"
+      title="Documentation"
       description="How to build interfaces with Reax."
-      basePath="#/guide"
+      basePath="#/docs"
       nav={nav}
     >
+      <h2 id="starter">Quick Start</h2>
+      <p>
+        Scaffold a new project in seconds using the official Reax starter template:
+      </p>
+      <CodeBlock code={scaffoldSnippet} language="bash" title="Terminal" />
+
+      <p>
+        Or add Reax to an existing Vite application:
+      </p>
+      <CodeBlock code={existingProjectSnippet} language="bash" title="Terminal" />
+
+      <p>
+        In your <code>vite.config.ts</code>, configure JSX to use Reax:
+      </p>
+      <CodeBlock code={viteConfigSnippet} title="vite.config.ts" />
+
       <h2 id="components">How components work</h2>
       <p>
-        A component runs once when it mounts. It creates DOM elements, sets up signal subscriptions, and finishes.
+        A component runs once when it mounts. It creates native DOM elements, sets up signal subscriptions, and finishes.
       </p>
       <p>
-        Because the component function never re-runs, you never need <code>useCallback</code> or <code>useMemo</code>, and closures never go stale. When a signal updates, only the elements listening to that signal change.
+        Because component functions never re-run, you never need <code>useCallback</code> or <code>useMemo</code>, and closures never go stale. When a signal updates, only the specific DOM nodes listening to that signal change.
       </p>
 
       <h2 id="signals">1. Signals</h2>
       <p>
-        Signals hold reactive state. Read them by calling <code>count()</code>, or update them by passing a value:
+        Signals hold reactive state. Read them by calling <code>count()</code>, update them directly with <code>count(5)</code>, or pass an updater function:
       </p>
-      <CodeBlock code={signalSnippet} title="signal.ts" />
+      <CodeBlock code={signalSnippet} title="signals.ts" />
 
       <h2 id="derived">2. Derived values</h2>
       <p>
-        Use <code>computed</code> for values that depend on other signals. It tracks whatever you read inside the function:
+        Use <code>computed</code> for values that depend on other signals. It automatically tracks any signal read inside the getter function:
       </p>
       <CodeBlock code={computedSnippet} title="computed.ts" />
 
-      <h2 id="control-flow">3. Conditional rendering and lists</h2>
+      <h2 id="control-flow">3. Control flow</h2>
       <p>
         Regular <code>if</code> statements and <code>array.map()</code> evaluate once at mount. Use <code>Show</code>, <code>For</code>, and <code>Switch</code> to keep DOM elements reactive:
       </p>
@@ -193,6 +243,12 @@ function SearchInput() {
         Signals inherit from <code>Observable</code>, so you can pipe them directly through operators:
       </p>
       <CodeBlock code={rxjsSnippet} title="rxjs.tsx" />
+
+      <h2 id="lifecycle">7. Lifecycle &amp; cleanup</h2>
+      <p>
+        Side effects that need physical DOM access can be registered with <code>onMount</code> and <code>onUnmount</code>. Any subscriptions or class binders created inside components are automatically disposed when the component unmounts.
+      </p>
+      <CodeBlock code={lifecycleSnippet} title="lifecycle.tsx" />
     </DocsLayout>
   );
 }

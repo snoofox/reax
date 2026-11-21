@@ -6,12 +6,17 @@
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://snoofox.github.io/reax/#/guide</loc>
+    <loc>https://snoofox.github.io/reax/#/docs</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://snoofox.github.io/reax/#/api</loc>
+    <loc>https://snoofox.github.io/reax/#/integrations</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://snoofox.github.io/reax/#/references</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>

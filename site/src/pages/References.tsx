@@ -10,13 +10,13 @@ const nav = [
   { id: "rxjs", label: "Re-exported RxJS" },
 ];
 
-export function ApiReference() {
+export function References() {
   return (
     <DocsLayout
       eyebrow="Reference"
-      title="API Reference"
-      description="Complete TypeScript reference for all functions, components, props, and types exported by @snoofox/reax."
-      basePath="#/api"
+      title="References"
+      description="Complete technical reference for all functions, components, props, and types exported by @snoofox/reax."
+      basePath="#/references"
       nav={nav}
     >
       <section class="api-group" id="reactivity">
@@ -398,3 +398,5 @@ function UserBadge() {
     </DocsLayout>
   );
 }
+
+export const ApiReference = References;

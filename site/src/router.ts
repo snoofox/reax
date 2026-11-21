@@ -2,8 +2,9 @@ import { signal } from "@snoofox/reax";
 
 const routeTitles: Record<string, string> = {
   "/": "Reax: The power of RxJS with the syntax of React",
-  "/guide": "Guide | Reax",
-  "/api": "API Reference | Reax",
+  "/docs": "Documentation | Reax",
+  "/integrations": "Integrations | Reax",
+  "/references": "References | Reax",
   "/showcase/speed": "10,000 Rows Benchmark | Reax",
   "/showcase/dashboard": "Live Telemetry Showcase | Reax",
   "/showcase/kanban": "Kanban Board Showcase | Reax",

@@ -1,8 +1,9 @@
 import { render, Switch, Match, map } from "@snoofox/reax";
 import { currentRoute } from "./router";
 import { Home } from "./pages/Home";
-import { Guide } from "./pages/Guide";
-import { ApiReference } from "./pages/ApiReference";
+import { Docs } from "./pages/Docs";
+import { Integrations } from "./pages/Integrations";
+import { References } from "./pages/References";
 import { BenchmarkShowcase } from "./showcases/BenchmarkShowcase";
 import { DashboardShowcase } from "./showcases/DashboardShowcase";
 import { KanbanShowcase } from "./showcases/KanbanShowcase";
@@ -14,11 +15,14 @@ function App() {
       <Match when={currentRoute.pipe(map((r) => r === "/" || r === ""))}>
         <Home />
       </Match>
-      <Match when={currentRoute.pipe(map((r) => r.startsWith("/guide")))}>
-        <Guide />
+      <Match when={currentRoute.pipe(map((r) => r.startsWith("/docs")))}>
+        <Docs />
       </Match>
-      <Match when={currentRoute.pipe(map((r) => r.startsWith("/api")))}>
-        <ApiReference />
+      <Match when={currentRoute.pipe(map((r) => r.startsWith("/integrations")))}>
+        <Integrations />
+      </Match>
+      <Match when={currentRoute.pipe(map((r) => r.startsWith("/references")))}>
+        <References />
       </Match>
       <Match when={currentRoute.pipe(map((r) => r === "/showcase/speed"))}>
         <BenchmarkShowcase />

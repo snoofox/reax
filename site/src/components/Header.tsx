@@ -4,9 +4,18 @@ import { currentRoute } from "../router";
 export function Header() {
   const isShowcasesOpen = signal(false);
 
-  const isGuide$ = computed(() => (currentRoute().startsWith("/guide") ? "active" : ""));
-  const isApi$ = computed(() => (currentRoute().startsWith("/api") ? "active" : ""));
-  const isShowcase$ = computed(() => (currentRoute().startsWith("/showcase") ? "active" : ""));
+  const isDocs$ = computed(() =>
+    currentRoute().startsWith("/docs") ? "active" : ""
+  );
+  const isIntegrations$ = computed(() =>
+    currentRoute().startsWith("/integrations") ? "active" : ""
+  );
+  const isReferences$ = computed(() =>
+    currentRoute().startsWith("/references") ? "active" : ""
+  );
+  const isShowcase$ = computed(() =>
+    currentRoute().startsWith("/showcase") ? "active" : ""
+  );
 
   return (
     <>
@@ -21,10 +30,13 @@ export function Header() {
 
             <ul class="nav-links">
               <li>
-                <a href="#/guide" class={isGuide$}>Guide</a>
+                <a href="#/docs" class={isDocs$}>Docs</a>
               </li>
               <li>
-                <a href="#/api" class={isApi$}>API</a>
+                <a href="#/integrations" class={isIntegrations$}>Integrations</a>
+              </li>
+              <li>
+                <a href="#/references" class={isReferences$}>References</a>
               </li>
               <li class="nav-dropdown">
                 <button

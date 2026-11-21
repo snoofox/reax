@@ -7,8 +7,9 @@ export function Footer() {
           <span>The power of RxJS with the syntax of React.</span>
         </div>
         <div class="footer-links">
-          <a href="#/guide">Guide</a>
-          <a href="#/api">API Reference</a>
+          <a href="#/docs">Docs</a>
+          <a href="#/integrations">Integrations</a>
+          <a href="#/references">References</a>
           <a
             href="https://github.com/snoofox/reax"
             target="_blank"
