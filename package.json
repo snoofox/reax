@@ -1,6 +1,6 @@
 {
   "name": "@snoofox/reax",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "A fine-grained reactive UI library powered by RxJS.",
   "publishConfig": {
     "access": "public"
